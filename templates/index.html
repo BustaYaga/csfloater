@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CSFloat Dip Scanner</title>
+<style>
+  body { background:#14171c; color:#e6e6e6; font-family: -apple-system, Segoe UI, sans-serif; margin:0; padding:24px; }
+  h1 { font-size:20px; margin-bottom:4px; }
+  .sub { color:#9aa4b2; font-size:13px; margin-bottom:20px; }
+  .controls { margin-bottom:16px; }
+  button { background:#2b6cff; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; margin-right:8px; font-size:13px; }
+  button.secondary { background:#3a3f4a; }
+  table { width:100%; border-collapse: collapse; font-size:13px; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #262b33; }
+  th { color:#9aa4b2; font-weight:600; text-transform:uppercase; font-size:11px; }
+  tr:hover { background:#1c212a; }
+  .profit { color:#4ade80; font-weight:600; }
+  .dip { color:#f59e0b; }
+  a { color:#7aa2ff; text-decoration:none; }
+  #status { font-size:12px; color:#9aa4b2; margin-left:8px; }
+</style>
+</head>
+<body>
+  <h1>CSFloat Dip Scanner</h1>
+  <div class="sub">Historical dip / mean-reversion candidates (CSFloat live listings + cs2.sh sales history)</div>
+
+  <div class="controls">
+    <button onclick="scanNow()">Scan Now</button>
+    <button class="secondary" onclick="clearDeals()">Clear</button>
+    <span id="status"></span>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th><th>Current $</th><th>Baseline $</th><th>Dip %</th>
+        <th>Est. Profit</th><th>Profit %</th><th>Sales in Window</th><th>Link</th>
+      </tr>
+    </thead>
+    <tbody id="deals-body"></tbody>
+  </table>
+
+<script>
+async function loadDeals() {
+  const res = await fetch('/api/deals');
+  const deals = await res.json();
+  const body = document.getElementById('deals-body');
+  body.innerHTML = '';
+  deals.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${d.market_hash_name}</td>
+      <td>$${d.current_price.toFixed(2)}</td>
+      <td>$${d.baseline_price.toFixed(2)}</td>
+      <td class="dip">${d.dip_percentage.toFixed(1)}%</td>
+      <td class="profit">$${d.est_profit.toFixed(2)}</td>
+      <td class="profit">${d.est_profit_percentage.toFixed(1)}%</td>
+      <td>${d.sales_in_window}</td>
+      <td><a href="${d.url}" target="_blank">view</a></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+async function scanNow() {
+  document.getElementById('status').innerText = 'Scanning...';
+  const res = await fetch('/api/scan-now', { method: 'POST' });
+  const data = await res.json();
+  document.getElementById('status').innerText = `Found ${data.found} this scan`;
+  loadDeals();
+}
+
+async function clearDeals() {
+  await fetch('/api/clear', { method: 'POST' });
+  loadDeals();
+}
+
+loadDeals();
+setInterval(loadDeals, 15000);
+</script>
+</body>
+</html>

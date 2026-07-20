@@ -1,0 +1,27 @@
+{
+  "min_price": 1.00,
+  "max_price": 100.00,
+  "scan_pages": 10,
+  "scan_interval_seconds": 900,
+
+  "_comment_history": "cs2.sh lookback + baseline settings",
+  "history_lookback_days": 30,
+  "baseline_window_days": 14,
+  "min_sales_in_window": 6,
+
+  "_comment_dip": "How the mean-reversion strategy decides an item is a candidate",
+  "min_dip_percentage": 15.0,
+  "max_dip_percentage": 60.0,
+  "recent_days_for_current_price": 2,
+
+  "_comment_profit": "Fee-aware profitability filter (CSFloat charges ~2% seller fee)",
+  "csfloat_fee_percentage": 2.0,
+  "min_profit_usd": 1.00,
+  "min_profit_percentage": 8.0,
+
+  "dynamic_profit_targets": [
+    { "max_skin_price": 10.0,  "min_profit_usd": 1.0, "min_profit_percentage": 15.0 },
+    { "max_skin_price": 30.0,  "min_profit_usd": 2.5, "min_profit_percentage": 10.0 },
+    { "max_skin_price": 100.0, "min_profit_usd": 5.0, "min_profit_percentage": 8.0 }
+  ]
+}
