@@ -11,12 +11,20 @@ toward the baseline — your mean-reversion strategy, automated.
 2. **history_client.py** pulls each item's recent daily sale price/volume from
    cs2.sh (`/v1/archive/csfloat`) — CSFloat's own API doesn't expose history,
    so this fills that gap.
-3. **scanner.py** computes a baseline price (median of the last N days,
-   excluding the most recent couple of days) per item, and flags listings
-   that are priced X–Y% below that baseline with enough sales volume to be
-   confident you can resell.
-4. Results are stored in **deals.db** (SQLite) and shown on a small
-   **Flask dashboard** (`app.py` + `templates/index.html`).
+2b. **snapshot_job.py** runs once a day and writes each item's median
+    CSFloat listing price to **snapshots.db** — this is your own
+    first-party price history, replacing any paid third-party source.
+3. **scanner.py** computes a baseline from your accumulated snapshots
+   (an item needs `min_snapshot_days_to_activate` days of history before
+   it's eligible to be flagged — 14 by default).
+4. Results are stored in **deals.db**...
+
+## Bootstrapping your dataset
+There's no shortcut here: schedule `snapshot_job.py` to run daily
+(Task Scheduler on Windows, cron on Linux/Mac) and let it run for
+`min_snapshot_days_to_activate` days (14 by default) before expecting
+any flagged deals. Lower that number if you want earlier (noisier)
+signals while data builds up.
 
 ## Setup
 

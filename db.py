@@ -24,10 +24,61 @@ def init_db():
             found_at REAL
         )
     """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS snapshots (
+            market_hash_name TEXT,
+            snapshot_date TEXT,   -- 'YYYY-MM-DD', one row per item per day
+            price REAL,
+            listing_count INTEGER,
+            PRIMARY KEY (market_hash_name, snapshot_date)
+        )
+    """)
     conn.commit()
     conn.close()
 
 
+def save_snapshot(records):
+    # """records: [{"market_hash_name": ..., "date": "YYYY-MM-DD",
+    #                "price": float, "listing_count": int}, ...]"""
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    for r in records:
+        c.execute("""
+            INSERT INTO snapshots (market_hash_name, snapshot_date, price, listing_count)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(market_hash_name, snapshot_date)
+            DO UPDATE SET price=excluded.price, listing_count=excluded.listing_count
+        """, (r["market_hash_name"], r["date"], r["price"], r["listing_count"]))
+    conn.commit()
+    conn.close()
+    
+
+def get_snapshot_history(market_hash_name, days=30):
+    # """Returns oldest-first list of {"date", "price", "listing_count"}."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    rows = c.execute("""
+        SELECT snapshot_date as date, price, listing_count
+        FROM snapshots
+        WHERE market_hash_name = ?
+        ORDER BY snapshot_date DESC LIMIT ?
+    """, (market_hash_name, days)).fetchall()
+    conn.close()
+    return [dict(r) for r in reversed(rows)]
+
+
+def count_snapshot_days(market_hash_name):
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    n = c.execute(
+        "SELECT COUNT(*) FROM snapshots WHERE market_hash_name = ?",
+        (market_hash_name,)
+    ).fetchone()[0]
+    conn.close()
+    return n
+
+           
 def save_deals(deals):
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()

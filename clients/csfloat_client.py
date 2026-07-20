@@ -1,10 +1,10 @@
-"""
-Thin client around the official CSFloat listings API.
-Docs: https://docs.csfloat.com/  (GET /api/v1/listings)
+# """
+# Thin client around the official CSFloat listings API.
+# Docs: https://docs.csfloat.com/  (GET /api/v1/listings)
 
-Note: the official API is listings-only (current snapshot). It does NOT
-provide historical sales data - that's what history_client.py (cs2.sh) is for.
-"""
+# Note: the official API is listings-only (current snapshot). It does NOT
+# provide historical sales data - see snapshot_job.py and db.py for the first-party history solution.
+# """
 import time
 import requests
 

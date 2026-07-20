@@ -2,19 +2,22 @@
 Dip / mean-reversion scanner.
 
 Strategy: for each CSFloat listing in our watch categories, pull the item's
-recent sales history from cs2.sh, compute a baseline price (median over
-`baseline_window_days`, excluding the most recent `recent_days_for_current_price`),
+own first-party price history (collected daily by snapshot_job.py into
+snapshots.db), compute a baseline price (median over `baseline_window_days`),
 and flag it if the current listing is meaningfully below that baseline AND
-has enough sales volume to be confident you can exit later.
+has enough tracked history to be confident you can exit later.
 
 This directly implements the pattern described: "was $8 a week ago, is $5
 now -> buy, expect reversion toward $8."
+
+Note: an item won't be considered until it has at least
+`min_snapshot_days_to_activate` days of self-collected history - see
+snapshot_job.py, which needs to run daily to build that dataset up.
 """
 import statistics
 import time
 
 from clients.csfloat_client import CSFloatClient
-from clients.history_client import HistoryClient
 import db
 
 
@@ -22,8 +25,6 @@ class DipScanner:
     def __init__(self, config):
         self.config = config
         self.csfloat = CSFloatClient(config["csfloat_api_key"])
-        self.history = HistoryClient(config["cs2sh_api_key"])
-        self._history_cache = {}  # market_hash_name -> (timestamp, records)
 
     # ---------- data gathering ----------
 
@@ -38,14 +39,10 @@ class DipScanner:
         )
 
     def _get_history(self, market_hash_name):
-        cached = self._history_cache.get(market_hash_name)
-        if cached and (time.time() - cached[0]) < 3600:
-            return cached[1]
-        records = self.history.get_sales_history(
-            market_hash_name, days=self.config["history_lookback_days"]
+        # Own snapshot data - see snapshot_job.py and db.py
+        return db.get_snapshot_history(
+            market_hash_name, days=self.config["baseline_window_days"] + 5
         )
-        self._history_cache[market_hash_name] = (time.time(), records)
-        return records
 
     # ---------- strategy ----------
 
@@ -74,9 +71,13 @@ class DipScanner:
 
                 listing_price = item.get("price", 0) / 100.0
 
+                days_tracked = db.count_snapshot_days(name)
+                if days_tracked < cfg["min_snapshot_days_to_activate"]:
+                    continue  # not enough self-collected history yet
+
                 records = self._get_history(name)
                 if len(records) < cfg["min_sales_in_window"]:
-                    continue  # not enough data / not liquid enough
+                    continue  # gaps in snapshot coverage
 
                 recent_cutoff_days = cfg["recent_days_for_current_price"]
                 baseline_window = cfg["baseline_window_days"]
@@ -91,7 +92,7 @@ class DipScanner:
 
                 baseline_prices = [r["price"] for r in baseline_records]
                 baseline_price = statistics.median(baseline_prices)
-                sales_in_window = sum(r.get("volume", 1) for r in baseline_records)
+                sales_in_window = sum(r.get("listing_count", 1) for r in baseline_records)
 
                 if baseline_price <= 0:
                     continue

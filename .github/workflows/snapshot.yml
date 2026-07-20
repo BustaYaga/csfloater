@@ -1,0 +1,37 @@
+name: Daily CSFloat Snapshot
+
+on:
+  schedule:
+    # 23:55 UTC corresponds to 05:25 AM IST
+    - cron: '55 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install exact dependencies
+        run: |
+          pip install flask==3.0.3 requests==2.32.3 python-dotenv==1.0.1
+
+      - name: Execute Snapshot Script
+        env:
+          # This pulls the hidden key from GitHub settings and loads it into your script
+          CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
+        run: python your_script_name.py 
+
+      - name: Commit and Push Snapshot Files
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add snapshots.db
+          git diff-index --quiet HEAD || git commit -m "chore: Database Auto-Snapshot"
+          git push

@@ -1,8 +1,8 @@
-"""
-Single point where secrets (.env) and strategy config (config.json) are
-merged into one settings dict. Everything else in the project should import
-from here instead of touching os.environ or config.json directly.
-"""
+# """
+# Single point where secrets (.env) and strategy config (config.json) are
+# merged into one settings dict. Everything else in the project should import
+# from here instead of touching os.environ or config.json directly.
+# """
 import json
 import os
 from dotenv import load_dotenv
@@ -15,13 +15,9 @@ def load_config(path="config.json"):
         config = json.load(f)
 
     csfloat_key = os.environ.get("CSFLOAT_API_KEY")
-    cs2sh_key = os.environ.get("CS2SH_API_KEY")
 
     if not csfloat_key:
         raise RuntimeError("CSFLOAT_API_KEY not set — copy .env.example to .env and fill it in")
-    if not cs2sh_key:
-        raise RuntimeError("CS2SH_API_KEY not set — copy .env.example to .env and fill it in")
 
     config["csfloat_api_key"] = csfloat_key
-    config["cs2sh_api_key"] = cs2sh_key
     return config
