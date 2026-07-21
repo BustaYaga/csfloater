@@ -68,8 +68,15 @@ class DipScanner:
                     continue
                 if info.get("is_souvenir"):
                     continue
+                if info.get("wear_name") not in cfg["allowed_wears"]:
+                    continue
 
                 listing_price = item.get("price", 0) / 100.0
+                
+                reference = item.get("reference") or {}
+                predicted_raw = reference.get("predicted_price")
+                predicted_price = predicted_raw / 100.0 if isinstance(predicted_raw, (int, float)) and predicted_raw > 0 else None
+
 
                 days_tracked = db.count_snapshot_days(name)
                 if days_tracked < cfg["min_snapshot_days_to_activate"]:

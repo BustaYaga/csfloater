@@ -1,8 +1,10 @@
 {
   "included_weapons": [
-    "Glock-18", "USP-S", "P250", "Desert Eagle", "Five-SeveN",
-    "Tec-9", "CZ75-Auto", "P2000", "Dual Berettas", "R8 Revolver"
+    "Glock-18", "USP-S", "Desert Eagle", "M4A4", "M4A1-S",
+    "Galil AR", "AK-47", "AWP", "FAMAS", "MAC-10"
   ],
+  "allowed_wears": ["Factory New", "Minimal Wear", "Field-Tested"],
+  
   "min_price": 5.00,
   "max_price": 100.00,
   "scan_pages": 10,
@@ -10,12 +12,12 @@
 
   "snapshot_retention_days": 90,
   "baseline_window_days": 14,
-  "min_sales_in_window": 6,
+  "min_sales_in_window": 1,
   "min_snapshot_days_to_activate": 1,
 
-  "min_dip_percentage": 15.0,
-  "max_dip_percentage": 60.0,
-  "recent_days_for_current_price": 2,
+  "min_dip_percentage": 0.1,
+  "max_dip_percentage": 90.0,
+  "recent_days_for_current_price": 0,
 
   "csfloat_fee_percentage": 2.0,
   "min_profit_usd": 1.00,

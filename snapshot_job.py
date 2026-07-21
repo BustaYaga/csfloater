@@ -17,27 +17,31 @@ import db
 
 
 def take_snapshot():
-    config = load_config()
-    client = CSFloatClient(config["csfloat_api_key"])
+    cfg = load_config()
+    client = CSFloatClient(cfg["csfloat_api_key"])
 
     listings = client.fetch_listings(
-        min_price_cents=int(config["min_price"] * 100),
-        max_price_cents=int(config["max_price"] * 100),
-        max_pages=config["scan_pages"],
+        min_price_cents=int(cfg["min_price"] * 100),
+        max_price_cents=int(cfg["max_price"] * 100),
+        max_pages=cfg["scan_pages"],
         sort_by="most_recent",
     )
 
     by_item = defaultdict(list)
-    for item in listings:
-        info = item.get("item", {})
+    for listing in listings:
+        info = listing.get("item", {})
         name = info.get("market_hash_name", "")
-        if not name or not any(w in name for w in config["included_weapons"]):
+        if not name or not any(w in name for w in cfg["included_weapons"]):
             continue
         if info.get("is_souvenir"):
             continue
-        price = item.get("price", 0) / 100.0
-        if price > 0:
-            by_item[name].append(price)
+        if info.get("wear_name") not in cfg["allowed_wears"]:
+                    continue
+        reference = listing.get("reference") or {}
+        predicted_raw = reference.get("predicted_price")
+        predicted = predicted_raw / 100.0 if isinstance(predicted_raw, (int, float)) and predicted_raw > 0 else None
+        if predicted:
+            by_item[name].append(predicted)
 
     today = datetime.date.today().isoformat()
     records = [
