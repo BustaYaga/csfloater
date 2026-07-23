@@ -1,13 +1,13 @@
 {
-  "included_weapons": [
-    "Glock-18", "USP-S", "Desert Eagle", "M4A4", "M4A1-S",
-    "Galil AR", "AK-47", "AWP", "FAMAS", "MAC-10"
-  ],
+  "weapon_def_indices": {
+  "M4A4": 16, "AK-47": 7
+   },
+
   "allowed_wears": ["Factory New", "Minimal Wear", "Field-Tested"],
   
   "min_price": 5.00,
   "max_price": 100.00,
-  "scan_pages": 10,
+  "scanner_pages_per_stratum": 2,
   "scan_interval_seconds": 900,
 
   "snapshot_retention_days": 90,
@@ -23,9 +23,18 @@
   "min_profit_usd": 1.00,
   "min_profit_percentage": 8.0,
 
+  "max_batch_seconds": 600,
+  "scan_position_file": "scan_position.json",
+  "skin_catalog_file": "skin_catalog.json",
+
   "dynamic_profit_targets": [
     { "max_skin_price": 10.0,  "min_profit_usd": 1.0, "min_profit_percentage": 15.0 },
     { "max_skin_price": 30.0,  "min_profit_usd": 2.5, "min_profit_percentage": 10.0 },
     { "max_skin_price": 100.0, "min_profit_usd": 5.0, "min_profit_percentage": 8.0 }
-  ]
+  ],
+
+  "request_delay": 3.0,
+  "rate_limit_stop_threshold": 10,
+  "rate_limit_warn_threshold": 50,
+  "rate_state_file": "rate_state.json"
 }
