@@ -26,7 +26,7 @@ jobs:
         env:
           # This pulls the hidden key from GitHub settings and loads it into your script
           CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
-        run: python your_script_name.py 
+        run: python snapshot_job.py 
 
       - name: Commit and Push Snapshot Files
         run: |
