@@ -30,13 +30,24 @@ class DipScanner:
 
     def fetch_candidate_listings(self):
         cfg = self.config
-        return self.csfloat.fetch_listings(
-            min_price_cents=int(cfg["min_price"] * 100),
-            max_price_cents=int(cfg["max_price"] * 100),
-            max_pages=cfg["scan_pages"],
-            sort_by="most_recent",
-            type_="buy_now",
-        )
+        all_listings = []
+        for weapon_name, def_index in cfg["weapon_def_indices"].items():
+            for wear in cfg["allowed_wears"]:
+                listings = self.csfloat.fetch_listings(
+                    def_index=def_index,
+                    min_price_cents=int(cfg["min_price"] * 100),
+                    max_price_cents=int(cfg["max_price"] * 100),
+                    max_pages=cfg["scanner_pages_per_stratum"],
+                    sort_by="lowest_price",
+                    type_="buy_now",
+                )
+                all_listings.extend(
+                    l for l in listings
+                    if l.get("item", {}).get("wear_name") == wear
+                )
+                # time.sleep(self.csfloat.request_delay)
+
+        return all_listings
 
     def _get_history(self, market_hash_name):
         # Own snapshot data - see snapshot_job.py and db.py
@@ -58,14 +69,11 @@ class DipScanner:
     def analyze_dip_deals(self, listings):
         cfg = self.config
         deals = []
-        included = cfg["included_weapons"]
 
         for item in listings:
             try:
                 info = item.get("item", {})
                 name = info.get("market_hash_name", "")
-                if not name or not any(w in name for w in included):
-                    continue
                 if info.get("is_souvenir"):
                     continue
                 if info.get("wear_name") not in cfg["allowed_wears"]:
@@ -85,6 +93,10 @@ class DipScanner:
                 records = self._get_history(name)
                 if len(records) < cfg["min_sales_in_window"]:
                     continue  # gaps in snapshot coverage
+                
+                total_recs_seen = sum(r.get("listing_count", 1) for r in records)
+                if total_recs_seen < 3:
+                   continue  # too thin - baseline could be a single unreliable data point
 
                 recent_cutoff_days = cfg["recent_days_for_current_price"]
                 baseline_window = cfg["baseline_window_days"]
