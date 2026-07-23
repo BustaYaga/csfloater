@@ -32,6 +32,6 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions Bot'
           git config --global user.email 'actions@github.com'
-          git add snapshots.db
+          git add deals.db
           git diff-index --quiet HEAD || git commit -m "chore: Database Auto-Snapshot"
           git push
