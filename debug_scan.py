@@ -74,6 +74,8 @@ print(f"Of those, have >=1 snapshot day: {have_snapshots}")
 print(f"Of those matched, missing reference entirely: {missing_reference}\n")
 
 rows.sort(key=lambda r: (r[3] is None, r[3] if r[3] is not None else 0))
+rows = [r for r in rows if r[3] is not None and 0 < r[3] < 95]  # only sane positive dips
+rows.sort(key=lambda r: -r[3])  # biggest real dip first
 print(f"{'name':<40} {'current':>8} {'baseline':>9} {'dip%':>7} {'predicted':>9} {'pred_dip%':>10} {'days':>5} {'#recs':>6}")
 for name, price, baseline, dip, pred, pred_dip, days, n in rows[:30]:
     dip_str = f"{dip:.1f}" if dip is not None else "N/A"
