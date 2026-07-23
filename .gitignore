@@ -1,5 +1,8 @@
 .env
 deals.db
+snapshots.db
+rate_state.json
+logs/
 __pycache__/
 *.pyc
 .venv/
