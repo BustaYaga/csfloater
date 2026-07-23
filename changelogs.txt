@@ -1,0 +1,18 @@
+changelogs not available for version v0.2 and earlier
+
+v0.3
+feat(snapshot): stratify scanning by weapon+skin+wear using CSFloat def_index/paint_index
+feat(snapshot): add time-budgeted, resumable rotation across strata via scan_position.json
+feat(catalog): add discover_paint_indices.py to empirically build skin_catalog.json with rarity data
+feat(client): self-report real CSFloat rate-limit headers (X-Ratelimit-*) and persist across runs
+feat(client): add hard rate-limit gate (stop <=10, warn <=50 remaining) checked before any request
+feat(snapshot): add --restart CLI flag to force a fresh pass from stratum 0
+feat(logging): append per-session summaries to logs/snapshot_job.log
+feat(ui): add terminal_colors module with CS2 rarity color mapping and message-type styling
+feat(ui): real-time per-stratum progress line with rarity-highlighted skin names
+feat(ui): boxed banners and dividers for session start/end summaries
+fix(snapshot): reset scan position automatically when catalog size changes between runs
+fix(snapshot): fix duplicated weapon name and stale processed-count in progress display
+fix(client): remove redundant per-page delay now superseded by fixed per-request delay
+fix(config): use config_loader/UTF-8-safe file I/O throughout to avoid Windows cp1252 crashes
+chore(config): remove unused included_weapons/pages_per_stratum keys, add weapon_def_indices
