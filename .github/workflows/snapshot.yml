@@ -3,6 +3,9 @@ name: Daily CSFloat Snapshot
 on:
   schedule:
     # 23:55 UTC corresponds to 05:25 AM IST
+    - cron: '55 19 * * *'
+    - cron: '55 20 * * *'
+    - cron: '55 22 * * *'
     - cron: '55 23 * * *'
   workflow_dispatch:
 
