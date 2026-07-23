@@ -1,0 +1,23 @@
+
+==== Session: 2026-07-23T06:18:30.102664+00:00 ====
+Strata processed this session: 149/273
+Unique skins indexed this session: 83
+Elapsed: 560s
+Rate limit remaining: 10/200
+Resumes at index: 22
+Stopped early: rate limit threshold reached mid-run (10/200 left, resets in 16m 40s)
+====
+
+==== Session: 2026-07-23T06:20:01.254461+00:00 ====
+TERMINATED before start - Terminating process: rate limit threshold reached (10/200 left, resets in 15m 9s)
+====
+
+==== Session: 2026-07-23T11:41:26.398788+00:00 ====
+Strata processed:   119/273
+Skins indexed:      41
+Elapsed:            633s
+Rate limit left:    76/200
+Resumes at index:   141
+Result: time budget reached - will resume next run.
+Outcome: time_budget - paused, resumable
+====
