@@ -3,7 +3,7 @@ Dip / mean-reversion scanner.
 
 Strategy: for each CSFloat listing in our watch categories, pull the item's
 own first-party price history (collected daily by snapshot_job.py into
-snapshots.db), compute a baseline price (median over `baseline_window_days`),
+the snapshots table in deals.db), compute a baseline price (median over `baseline_window_days`),
 and flag it if the current listing is meaningfully below that baseline AND
 has enough tracked history to be confident you can exit later.
 

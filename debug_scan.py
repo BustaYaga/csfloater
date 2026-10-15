@@ -17,7 +17,7 @@ client = CSFloatClient(cfg["csfloat_api_key"])
 listings = client.fetch_listings(
     min_price_cents=int(cfg["min_price"] * 100),
     max_price_cents=int(cfg["max_price"] * 100),
-    max_pages=cfg["scan_pages"],
+    max_pages=cfg["scanner_pages_per_stratum"],
     sort_by="most_recent",
     type_="buy_now",
 )

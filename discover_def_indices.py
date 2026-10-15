@@ -1,17 +1,21 @@
 """
-Empirically discovers the def_index for each weapon in included_weapons by
+Empirically discovers the def_index for each weapon you name by
 pulling live listings and cross-referencing market_hash_name -> def_index.
 Run this once to build a trustworthy weapon_def_index map, instead of
 hardcoding guessed IDs from the internet (wrong IDs fail silently).
 
-Run: python discover_def_indices.py
+Run: python discover_def_indices.py "AK-47" "AWP" "Desert Eagle"
+     (no arguments = the weapons already in config.json's weapon_def_indices)
+Then copy the printed numbers into weapon_def_indices in config.json.
 """
+import sys
 from collections import defaultdict
 
 from clients.csfloat_client import CSFloatClient
 from config_loader import load_config
 
 cfg = load_config()
+weapons = sys.argv[1:] or list(cfg["weapon_def_indices"].keys())
 client = CSFloatClient(cfg["csfloat_api_key"])
 
 # Pull a broad, unfiltered sample across a wide price range to maximize
@@ -36,7 +40,7 @@ for listing in listings:
         continue
 
     matched_any = False
-    for weapon in cfg["included_weapons"]:
+    for weapon in weapons:
         if weapon in name:
             seen[weapon].add(def_index)
             matched_any = True
@@ -44,7 +48,7 @@ for listing in listings:
         unmatched_names.add(name)
 
 print("=== def_index per weapon (from live data) ===")
-for weapon in cfg["included_weapons"]:
+for weapon in weapons:
     indices = seen.get(weapon)
     if not indices:
         print(f"{weapon:<15} NOT SEEN this run - try again, or check name casing")
