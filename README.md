@@ -54,7 +54,18 @@ Dashboard with background auto-scanning:
 ```bash
 python app.py
 ```
-Then open http://127.0.0.1:5000
+Then open http://127.0.0.1:5000. The dashboard shows everything
+`snapshot_job.py` has collected: collection health (snapshots per day,
+recent runs from `logs/snapshot_job.log`), a tracked-basket price index,
+the skins furthest below their baseline, a searchable explorer with each
+skin's full price history, and the scanner's flagged deals. It only reads
+`deals.db`, so it works without `CSFLOAT_API_KEY` (live scanning stays off
+until the key is set).
+
+Static, offline copy of the dashboard with the current data baked in:
+```bash
+python export_dashboard.py            # writes dashboard_export.html
+```
 
 ## Before you trust it with real money
 
