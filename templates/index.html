@@ -527,7 +527,7 @@ function renderHeader() {
   pills.push(STATIC
     ? `<span class="pill"><span class="dot"></span>Static export · ${fmtStamp(DATA.generated_at)}</span>`
     : `<span class="pill ok"><span class="dot"></span>Live · reading deals.db</span>`);
-  if (!STATIC) pills.push(DATA.scanner_enabled
+  if (!STATIC && !DATA.public_mode) pills.push(DATA.scanner_enabled
     ? `<span class="pill ok"><span class="dot"></span>Scanner on</span>`
     : `<span class="pill warn"><span class="dot"></span>Scanner off: no CSFLOAT_API_KEY</span>`);
   $("#mode").innerHTML = pills.join("");
@@ -734,7 +734,7 @@ async function loadDeals() {
   else { try { deals = await (await fetch("/api/deals")).json(); } catch (e) { deals = []; } }
   const el = $("#deals");
   if (!deals.length) {
-    el.innerHTML = `<div class="empty">No deals recorded yet. ${STATIC ? "This export was taken before scanner.py saved any." : DATA.scanner_enabled ? "The background scanner checks every " + Math.round((DATA.settings.scan_interval_seconds || 900) / 60) + " minutes, or press Scan now." : "Set CSFLOAT_API_KEY in .env and restart app.py to turn scanning on."}</div>`;
+    el.innerHTML = `<div class="empty">No deals recorded yet. ${STATIC || DATA.public_mode ? "The scanner hasn't flagged any listings yet." : DATA.scanner_enabled ? "The background scanner checks every " + Math.round((DATA.settings.scan_interval_seconds || 900) / 60) + " minutes, or press Scan now." : "Set CSFLOAT_API_KEY in .env and restart app.py to turn scanning on."}</div>`;
     return;
   }
   el.innerHTML = `<table><thead><tr><th>Found</th><th>Item</th><th class="num">Price</th><th class="num">Baseline</th><th class="num">Dip</th><th class="num">Est. profit</th><th class="num">Profit %</th><th class="num">Listings in window</th><th></th></tr></thead><tbody>
@@ -747,7 +747,7 @@ async function loadDeals() {
 }
 
 function wireDealControls() {
-  if (STATIC) return;
+  if (STATIC || DATA.public_mode) return;
   $("#deal-controls").hidden = false;
   const scan = $("#scan-btn"), clear = $("#clear-btn"), status = $("#scan-status");
   if (!DATA.scanner_enabled) { scan.disabled = true; status.textContent = "Scanning needs CSFLOAT_API_KEY."; }

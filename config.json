@@ -13,7 +13,7 @@
   "snapshot_retention_days": 90,
   "baseline_window_days": 14,
   "min_sales_in_window": 1,
-  "min_snapshot_days_to_activate": 1,
+  "min_snapshot_days_to_activate": 80,
 
   "min_dip_percentage": 0.1,
   "max_dip_percentage": 90.0,
