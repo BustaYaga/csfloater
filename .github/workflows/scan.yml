@@ -1,0 +1,41 @@
+name: Dip Scan
+
+on:
+  workflow_dispatch:
+
+# Shares a group with the snapshot job so the two never write deals.db at once.
+concurrency:
+  group: deals-db
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install exact dependencies
+        run: |
+          pip install flask==3.0.3 requests==2.32.3 python-dotenv==1.0.1
+
+      - name: Run one dip scan
+        env:
+          CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
+        run: python scanner.py
+
+      - name: Commit flagged deals
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git add deals.db
+          git diff-index --quiet HEAD || git commit -m "chore: Dip scan results"
+          git pull --no-rebase --no-edit origin ${{ github.ref_name }} || true
+          git push

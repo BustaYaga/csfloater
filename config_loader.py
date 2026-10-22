@@ -10,12 +10,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def load_config(path="config.json"):
+def load_config(path="config.json", require_api_key=True):
     with open(path, encoding="utf-8") as f:
         config = json.load(f)
 
     csfloat_key = os.environ.get("CSFLOAT_API_KEY")
-    if not csfloat_key:
+    if not csfloat_key and require_api_key:
         raise RuntimeError("CSFLOAT_API_KEY not set - copy .env.example to .env and fill it in")
 
     config["csfloat_api_key"] = csfloat_key

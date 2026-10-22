@@ -1,5 +1,20 @@
 changelogs not available for version v0.2 and earlier
 
+v0.4
+feat(ui): local dashboard (app.py) - collection health, basket index, skins below baseline, per-skin history, flagged deals
+feat(ui): export_dashboard.py writes a self-contained offline copy of the dashboard
+feat(analytics): analytics.py exposes per-skin summaries and coverage as plain dicts
+feat(calibrate): calibrate_config.py backtests dip recovery and recommends strategy settings
+feat(scanner): honour rate_limit_stop_threshold; fetch each weapon once (12 -> 4 requests per scan)
+feat(app): PUBLIC_MODE=1 read-only mode; dashboard works without an API key
+feat(ci): manual Dip Scan workflow; scan and snapshot jobs share a concurrency group
+fix(ci): commit scan_position.json so snapshot runs resume instead of restarting
+fix(tools): discover_def_indices.py takes weapon names as arguments (included_weapons was removed in v0.3)
+fix(tools): debug_scan.py reads scanner_pages_per_stratum
+chore(config): calibrated on 85 days of data - 7-day baseline, 15-30% dips, 80-day activation, new profit tiers
+chore(config): remove unused snapshot_retention_days and top-level min_profit_* keys
+chore: remove empty snapshots.db; fill in .env.example; rewrite README
+
 v0.3
 feat(snapshot): stratify scanning by weapon+skin+wear using CSFloat def_index/paint_index
 feat(snapshot): add time-budgeted, resumable rotation across strata via scan_position.json

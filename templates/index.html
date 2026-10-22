@@ -2,81 +2,803 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CSFloat Dip Scanner</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  body { background:#14171c; color:#e6e6e6; font-family: -apple-system, Segoe UI, sans-serif; margin:0; padding:24px; }
-  h1 { font-size:20px; margin-bottom:4px; }
-  .sub { color:#9aa4b2; font-size:13px; margin-bottom:20px; }
-  .controls { margin-bottom:16px; }
-  button { background:#2b6cff; color:#fff; border:none; padding:8px 14px; border-radius:6px; cursor:pointer; margin-right:8px; font-size:13px; }
-  button.secondary { background:#3a3f4a; }
-  table { width:100%; border-collapse: collapse; font-size:13px; }
-  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #262b33; }
-  th { color:#9aa4b2; font-weight:600; text-transform:uppercase; font-size:11px; }
-  tr:hover { background:#1c212a; }
-  .profit { color:#4ade80; font-weight:600; }
-  .dip { color:#f59e0b; }
-  a { color:#7aa2ff; text-decoration:none; }
-  #status { font-size:12px; color:#9aa4b2; margin-left:8px; }
+/* Layout: a market terminal — one column of bands (collection → market → dips → explorer → deals),
+   summary first, detail on demand. Prices are mono, names are sans, headings are the angular display face. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --line: #dde2e9;
+  --ink: #11161d;
+  --ink-2: #485263;
+  --ink-3: #6f7a8b;
+  --accent: #a85c00;
+  --accent-soft: #f6e7d3;
+  --down: #2a78d6;          /* below baseline: the dip side */
+  --up: #d23f3e;            /* above baseline */
+  --neutral-mark: #9aa3b1;
+  --bar: #8fa3bd;
+  --bar-hi: #3a5679;
+  --good: #0ca30c;
+  --warning: #b77a00;
+  --critical: #d03b3b;
+  --shadow: 0 1px 2px rgba(17, 22, 29, .06), 0 2px 8px rgba(17, 22, 29, .04);
+  --font-display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1217; --surface: #161b22; --surface-2: #1d232c; --line: #2a313c;
+    --ink: #e9edf2; --ink-2: #b2bbc8; --ink-3: #8691a1;
+    --accent: #f0a345; --accent-soft: #3a2a14;
+    --down: #4f97ec; --up: #ee6a69; --neutral-mark: #5d6776;
+    --bar: #4a5d78; --bar-hi: #a9c2e3;
+    --good: #2fbf2f; --warning: #fab219; --critical: #ef5b5b;
+    --shadow: none;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --surface: #161b22; --surface-2: #1d232c; --line: #2a313c;
+  --ink: #e9edf2; --ink-2: #b2bbc8; --ink-3: #8691a1;
+  --accent: #f0a345; --accent-soft: #3a2a14;
+  --down: #4f97ec; --up: #ee6a69; --neutral-mark: #5d6776;
+  --bar: #4a5d78; --bar-hi: #a9c2e3;
+  --good: #2fbf2f; --warning: #fab219; --critical: #ef5b5b;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.5 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 48px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 36px; }
+.num, td.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+header.top {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px;
+  padding-block: 28px 18px; border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.brand h1 {
+  margin: 0; font: 700 26px/1.1 var(--font-display); letter-spacing: .01em; text-wrap: balance;
+}
+.brand h1 span { color: var(--accent); }
+.brand p { margin: 0; color: var(--ink-2); }
+.mode { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 500; border: 1px solid var(--line); background: var(--surface); white-space: nowrap;
+}
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); }
+.pill.ok .dot { background: var(--good); }
+.pill.warn .dot { background: var(--warning); }
+.pill.bad .dot { background: var(--critical); }
+
+/* sections */
+section { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.sec-head h2 { margin: 0; font: 600 18px/1.2 var(--font-display); letter-spacing: .02em; text-transform: uppercase; }
+.sec-head p { margin: 0; color: var(--ink-3); font-size: 13px; max-width: 65ch; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); min-width: 0; }
+.panel.pad { padding: 16px 18px; }
+.label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+
+/* stat tiles */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.tile { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.tile .big { font: 600 30px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.tile .note { color: var(--ink-2); font-size: 13px; }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 860px) { .grid-2 { grid-template-columns: minmax(0, 1fr); } }
+
+.chart-title { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.chart-title strong { font-weight: 600; }
+.chart-title .sub { color: var(--ink-3); font-size: 12px; }
+.chart { width: 100%; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.axis text { fill: var(--ink-3); font: 11px var(--font-mono); }
+.grid line { stroke: var(--line); }
+
+/* alerts */
+.alerts { display: flex; flex-direction: column; gap: 8px; }
+.alert {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start;
+  padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface);
+}
+.alert .ico {
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font: 700 12px/1 var(--font-mono); color: #fff; background: var(--warning); margin-top: 1px;
+}
+.alert.info .ico { background: var(--ink-3); }
+.alert b { font-weight: 600; }
+.alert p { margin: 0; color: var(--ink-2); }
+
+/* runs */
+.runs { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.runs li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 8px 0; border-top: 1px solid var(--line); }
+.runs li:first-child { border-top: 0; padding-top: 0; }
+.runs .when { font-weight: 500; }
+.runs .meta { grid-column: 1 / -1; color: var(--ink-3); font-size: 12px; }
+
+/* dips */
+.dips { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.dip {
+  padding: 12px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px;
+  cursor: pointer; text-align: left; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+}
+.dip:hover { border-color: var(--accent); }
+.dip .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dip .chg { font: 600 15px var(--font-mono); color: var(--down); text-align: right; }
+.dip .px { color: var(--ink-2); font-size: 12px; }
+.dip .spark { grid-column: 1 / -1; }
+.dip .spark svg { width: 100%; height: auto; display: block; }
+
+/* rarity chip */
+.rar { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.rar i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; flex: none; }
+.st { font-size: 10px; font-weight: 600; letter-spacing: .04em; color: var(--accent); background: var(--accent-soft); padding: 1px 5px; border-radius: 3px; margin-right: 4px; }
+
+/* explorer */
+.filters { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.filters input[type="search"], .filters select {
+  padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0;
+}
+.filters input[type="search"] { flex: 1 1 220px; }
+.filters label.chk { display: inline-flex; gap: 6px; align-items: center; color: var(--ink-2); font-size: 13px; }
+.filters .count { margin-left: auto; color: var(--ink-3); font-size: 13px; }
+.table-wrap { overflow-x: auto; }
+#explorer .table-wrap { max-height: 620px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); position: sticky; top: 0; background: var(--surface); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); }
+th[aria-sort="ascending"]::after { content: " ▲"; }
+th[aria-sort="descending"]::after { content: " ▼"; }
+td.num, th.num { text-align: right; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--surface-2); }
+tbody tr.sel { background: var(--accent-soft); }
+tbody tr.stale td { color: var(--ink-3); }
+.neg { color: var(--down); }
+.pos { color: var(--up); }
+.muted { color: var(--ink-3); }
+.empty { padding: 28px 18px; text-align: center; color: var(--ink-3); }
+
+/* detail */
+.detail { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px 20px; }
+@media (max-width: 860px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.detail h3 { margin: 0; font: 600 20px/1.2 var(--font-display); text-wrap: balance; }
+.detail .facts { display: grid; grid-template-columns: auto auto; gap: 6px 12px; align-content: start; margin: 0; }
+.detail .facts dt { color: var(--ink-3); font-size: 12px; }
+.detail .facts dd { margin: 0; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend i { width: 16px; height: 0; border-top: 2px solid var(--ink); display: inline-block; }
+.legend i.dash { border-top: 2px dashed var(--accent); }
+.close { justify-self: end; }
+
+.btn {
+  padding: 7px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface);
+  cursor: pointer; font-weight: 500;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.btn:hover { border-color: var(--accent); }
+.btn[disabled] { opacity: .5; cursor: default; }
+
+#tip {
+  position: fixed; z-index: 10; pointer-events: none; background: var(--ink); color: var(--bg);
+  font-size: 12px; line-height: 1.45; padding: 7px 10px; border-radius: 6px; max-width: 260px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+}
+#tip b { font-weight: 600; }
+#tip .num { font-family: var(--font-mono); }
+footer { color: var(--ink-3); font-size: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (prefers-reduced-motion: no-preference) { .dip, .btn { transition: border-color .15s; } }
 </style>
 </head>
 <body>
-  <h1>CSFloat Dip Scanner</h1>
-  <div class="sub">Historical dip / mean-reversion candidates (CSFloat live listings + cs2.sh sales history)</div>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>CSFloat <span>Dip</span> Scanner</h1>
+      <p id="subtitle">Loading snapshot history…</p>
+    </div>
+    <div class="mode" id="mode"></div>
+  </header>
 
-  <div class="controls">
-    <button onclick="scanNow()">Scan Now</button>
-    <button class="secondary" onclick="clearDeals()">Clear</button>
-    <span id="status"></span>
-  </div>
+  <section id="collection" aria-labelledby="h-collection">
+    <div class="sec-head">
+      <h2 id="h-collection">Collection</h2>
+      <p>What snapshot_job.py has stored so far: one median reference price per skin per day.</p>
+    </div>
+    <div class="tiles" id="tiles"></div>
+    <div class="alerts" id="alerts"></div>
+    <div class="grid-2">
+      <div class="panel pad">
+        <div class="chart-title"><strong>Skins snapshotted per day</strong><span class="sub" id="cov-sub"></span></div>
+        <div class="chart" id="coverage-chart"></div>
+      </div>
+      <div class="panel pad">
+        <div class="chart-title"><strong>Recent snapshot runs</strong><span class="sub">logs/snapshot_job.log</span></div>
+        <ul class="runs" id="runs"></ul>
+      </div>
+    </div>
+  </section>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Item</th><th>Current $</th><th>Baseline $</th><th>Dip %</th>
-        <th>Est. Profit</th><th>Profit %</th><th>Sales in Window</th><th>Link</th>
-      </tr>
-    </thead>
-    <tbody id="deals-body"></tbody>
-  </table>
+  <section id="market" aria-labelledby="h-market">
+    <div class="sec-head">
+      <h2 id="h-market">Market</h2>
+      <p id="basket-desc"></p>
+    </div>
+    <div class="panel pad">
+      <div class="chart-title"><strong>Tracked basket index</strong><span class="sub">first snapshot = 100</span></div>
+      <div class="chart" id="basket-chart"></div>
+    </div>
+  </section>
+
+  <section id="dips-sec" aria-labelledby="h-dips">
+    <div class="sec-head">
+      <h2 id="h-dips">Below baseline</h2>
+      <p id="dips-desc"></p>
+    </div>
+    <div class="filters">
+      <label class="chk"><input type="checkbox" id="dip-penny" checked> Skip skins under $1</label>
+    </div>
+    <div class="dips" id="dips"></div>
+  </section>
+
+  <section id="explorer" aria-labelledby="h-explorer">
+    <div class="sec-head">
+      <h2 id="h-explorer">Skin explorer</h2>
+      <p>Every skin with at least one snapshot. Select a row for its full price history.</p>
+    </div>
+    <div class="panel pad" id="detail" hidden></div>
+    <div class="filters">
+      <input type="search" id="q" placeholder="Search skins, e.g. Redline" aria-label="Search skins">
+      <select id="f-weapon" aria-label="Weapon"><option value="">All weapons</option></select>
+      <select id="f-wear" aria-label="Wear"><option value="">All wears</option></select>
+      <select id="f-rarity" aria-label="Rarity"><option value="">All rarities</option></select>
+      <label class="chk"><input type="checkbox" id="f-active" checked> In rotation only</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="panel table-wrap">
+      <table id="items">
+        <thead><tr>
+          <th class="sortable" data-k="name">Skin</th>
+          <th class="sortable" data-k="rarity">Rarity</th>
+          <th class="sortable num" data-k="days">Days</th>
+          <th class="sortable num" data-k="latest_price">Latest</th>
+          <th class="sortable num" data-k="baseline_price">Baseline</th>
+          <th class="sortable num" data-k="vs_baseline_pct">vs base</th>
+          <th class="sortable num" data-k="change_30d_pct">30 d</th>
+          <th class="sortable num" data-k="volatility_pct">Vol.</th>
+          <th class="sortable num" data-k="avg_listings">Listings/day</th>
+          <th>Trend</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="deals-sec" aria-labelledby="h-deals">
+    <div class="sec-head">
+      <h2 id="h-deals">Flagged deals</h2>
+      <p>Live listings scanner.py found below their baseline after fees.</p>
+    </div>
+    <div class="filters" id="deal-controls" hidden>
+      <button class="btn primary" id="scan-btn" type="button">Scan now</button>
+      <button class="btn" id="clear-btn" type="button">Clear deals</button>
+      <span class="muted" id="scan-status"></span>
+    </div>
+    <div class="panel table-wrap" id="deals"></div>
+  </section>
+
+  <footer id="footer"></footer>
+</div>
+<div id="tip" hidden></div>
 
 <script>
-async function loadDeals() {
-  const res = await fetch('/api/deals');
-  const deals = await res.json();
-  const body = document.getElementById('deals-body');
-  body.innerHTML = '';
-  deals.forEach(d => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${d.market_hash_name}</td>
-      <td>$${d.current_price.toFixed(2)}</td>
-      <td>$${d.baseline_price.toFixed(2)}</td>
-      <td class="dip">${d.dip_percentage.toFixed(1)}%</td>
-      <td class="profit">$${d.est_profit.toFixed(2)}</td>
-      <td class="profit">${d.est_profit_percentage.toFixed(1)}%</td>
-      <td>${d.sales_in_window}</td>
-      <td><a href="${d.url}" target="_blank">view</a></td>
-    `;
-    body.appendChild(tr);
+(() => {
+"use strict";
+
+const RARITY = {
+  "Consumer Grade":   ["#b0c3d9", 0],
+  "Industrial Grade": ["#5e98d9", 1],
+  "Mil-Spec Grade":   ["#4b69ff", 2],
+  "Restricted":       ["#8847ff", 3],
+  "Classified":       ["#d32ce6", 4],
+  "Covert":           ["#eb4b4b", 5],
+  "Contraband":       ["#e4ae39", 6],
+};
+const WEAR_SHORT = { "Factory New": "FN", "Minimal Wear": "MW", "Field-Tested": "FT", "Well-Worn": "WW", "Battle-Scarred": "BS" };
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf = new Intl.NumberFormat("en-US");
+const money = v => v == null ? "–" : "$" + (Math.abs(v) < 1 ? v.toFixed(3) : v.toFixed(2));
+const pct = (v, d = 1) => v == null ? "–" : (v > 0 ? "+" : v < 0 ? "−" : "") + Math.abs(v).toFixed(d) + "%";
+const sgn = v => v == null ? "muted" : v < 0 ? "neg" : v > 0 ? "pos" : "";
+const parseDay = s => new Date(s + "T00:00:00Z");
+const fmtDay = (s, opts = { month: "short", day: "numeric" }) => parseDay(s).toLocaleDateString("en-US", { timeZone: "UTC", ...opts });
+const fmtStamp = s => new Date(s).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC", hour12: false }) + " UTC";
+const daysBetween = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 864e5);
+
+const STATIC = window.__DATASET__ != null;
+let DATA = null;
+const state = { sort: "vs_baseline_pct", dir: 1, selected: null };
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function showTip(html, x, y) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let left = x + 14, top = y + 14;
+  if (left + r.width > innerWidth - 8) left = x - r.width - 14;
+  if (top + r.height > innerHeight - 8) top = y - r.height - 14;
+  tip.style.left = Math.max(8, left) + "px"; tip.style.top = Math.max(8, top) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+
+/* ---------- svg helpers ---------- */
+const NS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs = {}, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function niceTicks(lo, hi, n = 4) {
+  if (hi === lo) { hi = lo + 1; }
+  const span = hi - lo, step0 = span / n, mag = 10 ** Math.floor(Math.log10(step0));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || mag * 10;
+  const t = [];
+  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) t.push(+v.toFixed(10));
+  return t;
+}
+function dateTicks(dates, maxTicks) {
+  const n = dates.length; if (!n) return [];
+  const every = Math.max(1, Math.ceil(n / maxTicks));
+  const idx = [];
+  for (let i = 0; i < n; i += every) idx.push(i);
+  const gap = n - 1 - idx[idx.length - 1];
+  if (gap > 0) { if (gap < every * 0.75 && idx.length > 1) idx.pop(); idx.push(n - 1); }
+  return idx;
+}
+
+/*
+ * Line chart over daily points. series: [{values:[number|null], color, dash, width}],
+ * x is the shared date array. One y-axis only.
+ */
+function lineChart(el, { dates, series, height = 240, yFmt = v => v, tipFn, area = false, refLine = null }) {
+  el.innerHTML = "";
+  const W = Math.max(280, el.clientWidth), H = height;
+  const m = { t: 10, r: 14, b: 26, l: 52 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const all = series.flatMap(s => s.values).filter(v => v != null);
+  if (refLine != null) all.push(refLine);
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const padY = (hi - lo) * 0.08 || Math.abs(hi) * 0.05 || 1;
+  lo -= padY; hi += padY;
+  const ticks = niceTicks(lo, hi, 4);
+  lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const x = i => m.l + (dates.length === 1 ? iw / 2 : (i / (dates.length - 1)) * iw);
+  const y = v => m.t + ih - ((v - lo) / (hi - lo)) * ih;
+
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, el);
+  const g = svgEl("g", { class: "grid" }, svg);
+  const ax = svgEl("g", { class: "axis" }, svg);
+  ticks.forEach(t => {
+    svgEl("line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), "stroke-width": 1 }, g);
+    const tx = svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end" }, ax); tx.textContent = yFmt(t);
+  });
+  dateTicks(dates, Math.max(2, Math.floor(iw / 80))).forEach(i => {
+    const tx = svgEl("text", { x: x(i), y: H - 6, "text-anchor": i === 0 ? "start" : i === dates.length - 1 ? "end" : "middle" }, ax);
+    tx.textContent = fmtDay(dates[i]);
+  });
+  if (refLine != null) {
+    svgEl("line", { x1: m.l, x2: W - m.r, y1: y(refLine), y2: y(refLine), stroke: css("--ink-3"), "stroke-width": 1, "stroke-dasharray": "2 3" }, svg);
+  }
+  series.forEach((s, si) => {
+    let d = "", pen = false;
+    s.values.forEach((v, i) => {
+      if (v == null) { pen = false; return; }
+      d += (pen ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1); pen = true;
+    });
+    if (area && si === 0 && d) {
+      const first = s.values.findIndex(v => v != null), last = s.values.length - 1 - [...s.values].reverse().findIndex(v => v != null);
+      svgEl("path", { d: d + `L${x(last)},${m.t + ih}L${x(first)},${m.t + ih}Z`, fill: s.color, opacity: 0.08 }, svg);
+    }
+    svgEl("path", { d, fill: "none", stroke: s.color, "stroke-width": s.width || 2, "stroke-linejoin": "round", "stroke-linecap": "round", ...(s.dash ? { "stroke-dasharray": s.dash } : {}) }, svg);
+  });
+  // emphasised endpoint on the primary series
+  const p = series[0].values; const li = p.length - 1;
+  if (p[li] != null) svgEl("circle", { cx: x(li), cy: y(p[li]), r: 4, fill: series[0].color, stroke: css("--surface"), "stroke-width": 2 }, svg);
+
+  // hover crosshair
+  const cross = svgEl("line", { y1: m.t, y2: m.t + ih, stroke: css("--ink-3"), "stroke-width": 1, visibility: "hidden" }, svg);
+  const dots = series.map(s => svgEl("circle", { r: 4, fill: s.color, stroke: css("--surface"), "stroke-width": 2, visibility: "hidden" }, svg));
+  const hit = svgEl("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  const move = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(dates.length - 1, Math.round(((px - m.l) / iw) * (dates.length - 1))));
+    cross.setAttribute("x1", x(i)); cross.setAttribute("x2", x(i)); cross.setAttribute("visibility", "visible");
+    series.forEach((s, k) => {
+      const v = s.values[i];
+      if (v == null) { dots[k].setAttribute("visibility", "hidden"); return; }
+      dots[k].setAttribute("cx", x(i)); dots[k].setAttribute("cy", y(v)); dots[k].setAttribute("visibility", "visible");
+    });
+    showTip(tipFn(i), ev.clientX, ev.clientY);
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); dots.forEach(d => d.setAttribute("visibility", "hidden")); hideTip(); });
+}
+
+/* Vertical bars, one per day, single series. */
+function barChart(el, { dates, values, height = 200, color, hiColor, tipFn, yFmt = v => nf.format(v) }) {
+  el.innerHTML = "";
+  const W = Math.max(280, el.clientWidth), H = height;
+  const m = { t: 10, r: 8, b: 26, l: 44 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const hi0 = Math.max(...values, 1);
+  const ticks = niceTicks(0, hi0, 4); const hi = Math.max(hi0, ticks[ticks.length - 1]);
+  const y = v => m.t + ih - (v / hi) * ih;
+  const slot = iw / dates.length, gap = slot > 4 ? 2 : 0.5, bw = Math.max(1, slot - gap);
+  const svg = svgEl("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, el);
+  const g = svgEl("g", { class: "grid" }, svg), ax = svgEl("g", { class: "axis" }, svg);
+  ticks.forEach(t => {
+    svgEl("line", { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t) }, g);
+    const tx = svgEl("text", { x: m.l - 8, y: y(t) + 4, "text-anchor": "end" }, ax); tx.textContent = yFmt(t);
+  });
+  dateTicks(dates, Math.max(2, Math.floor(iw / 80))).forEach(i => {
+    const tx = svgEl("text", { x: m.l + i * slot + slot / 2, y: H - 6, "text-anchor": i === 0 ? "start" : i === dates.length - 1 ? "end" : "middle" }, ax);
+    tx.textContent = fmtDay(dates[i]);
+  });
+  const bars = values.map((v, i) => {
+    const h = Math.max(v > 0 ? 1 : 0, ih - (y(v) - m.t));
+    const r = Math.min(2, bw / 2);
+    const x0 = m.l + i * slot + gap / 2, y0 = m.t + ih - h;
+    // rounded top, square base
+    const d = h > r ? `M${x0},${m.t + ih}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}H${x0 + bw - r}Q${x0 + bw},${y0} ${x0 + bw},${y0 + r}V${m.t + ih}Z`
+                    : `M${x0},${m.t + ih}V${y0}H${x0 + bw}V${m.t + ih}Z`;
+    return svgEl("path", { d, fill: color }, svg);
+  });
+  const hit = svgEl("rect", { x: m.l, y: m.t, width: iw, height: ih, fill: "transparent" }, svg);
+  let last = -1;
+  const move = ev => {
+    const r = svg.getBoundingClientRect();
+    const px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(dates.length - 1, Math.floor((px - m.l) / slot)));
+    if (last >= 0) bars[last].setAttribute("fill", color);
+    bars[i].setAttribute("fill", hiColor); last = i;
+    showTip(tipFn(i), ev.clientX, ev.clientY);
+  };
+  hit.addEventListener("pointermove", move);
+  hit.addEventListener("pointerdown", move);
+  hit.addEventListener("pointerleave", () => { if (last >= 0) bars[last].setAttribute("fill", color); last = -1; hideTip(); });
+}
+
+function sparkline(history, w = 120, h = 28) {
+  const v = history.map(r => r[1]);
+  if (v.length < 2) return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"></svg>`;
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const pts = v.map((p, i) => [2 + (i / (v.length - 1)) * (w - 6), 3 + (h - 6) * (1 - (p - lo) / span)]);
+  const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join("");
+  const end = pts[pts.length - 1];
+  const dir = v[v.length - 1] < v[0] ? "var(--down)" : v[v.length - 1] > v[0] ? "var(--up)" : "var(--ink-3)";
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">
+    <path d="${d}" fill="none" stroke="var(--ink-2)" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="${end[0]}" cy="${end[1]}" r="2.6" fill="${dir}"/></svg>`;
+}
+
+const rarityChip = r => r ? `<span class="rar"><i style="background:${(RARITY[r] || ["var(--ink-3)"])[0]}"></i>${esc(r.replace(" Grade", ""))}</span>` : `<span class="muted">–</span>`;
+const skinLabel = it => `${it.stattrak ? '<span class="st">ST</span>' : ""}${esc(it.base_name)}${it.wear ? ` <span class="muted">(${WEAR_SHORT[it.wear] || esc(it.wear)})</span>` : ""}`;
+
+/* ---------- sections ---------- */
+function renderHeader() {
+  const o = DATA.overview;
+  $("#subtitle").textContent = o.first_date
+    ? `Snapshot history ${fmtDay(o.first_date)} – ${fmtDay(o.last_date, { month: "short", day: "numeric", year: "numeric" })} · ${DATA.settings.weapons.join(", ")} · ${DATA.settings.wears.join(", ")}`
+    : "No snapshots yet. Run snapshot_job.py to start collecting.";
+  const pills = [];
+  pills.push(STATIC
+    ? `<span class="pill"><span class="dot"></span>Static export · ${fmtStamp(DATA.generated_at)}</span>`
+    : `<span class="pill ok"><span class="dot"></span>Live · reading deals.db</span>`);
+  if (!STATIC && !DATA.public_mode) pills.push(DATA.scanner_enabled
+    ? `<span class="pill ok"><span class="dot"></span>Scanner on</span>`
+    : `<span class="pill warn"><span class="dot"></span>Scanner off: no CSFLOAT_API_KEY</span>`);
+  $("#mode").innerHTML = pills.join("");
+}
+
+function renderCollection() {
+  const o = DATA.overview, s = DATA.settings;
+  const tiles = [
+    ["Snapshots stored", nf.format(o.snapshot_rows), `${nf.format(o.listings_sampled)} listings sampled`],
+    ["Skins tracked", nf.format(o.items), `${nf.format(o.items_in_rotation)} still in rotation`],
+    ["Days collected", nf.format(o.collection_days), `of ${o.calendar_span_days} calendar days`],
+    ["Signal-ready skins", nf.format(o.items_ready), `≥ ${s.min_snapshot_days_to_activate} day${s.min_snapshot_days_to_activate === 1 ? "" : "s"} of history (config)`],
+  ];
+  $("#tiles").innerHTML = tiles.map(([l, b, n]) => `<div class="panel tile"><span class="label">${l}</span><span class="big">${b}</span><span class="note">${n}</span></div>`).join("");
+
+  // health notes, computed from the data itself
+  const alerts = [];
+  const pos = o.scan_position;
+  if (pos && o.last_date && pos.saved_at && daysBetween(pos.saved_at.slice(0, 10), o.last_date) > 2) {
+    alerts.push(["warn", "Scan position isn't advancing.",
+      `scan_position.json was last saved ${fmtDay(pos.saved_at.slice(0, 10), { month: "short", day: "numeric", year: "numeric" })} (index ${pos.index} of ${pos.total_strata}), but snapshots run daily. Each run resumes from the same stratum and hits the rate limit at the same place, so part of the catalog is never revisited. Only ${o.items_in_rotation} skins are still being refreshed.`]);
+  }
+  const rl = DATA.runs.filter(r => r.outcome === "rate_limit").length;
+  if (DATA.runs.length && rl / DATA.runs.length >= 0.5) {
+    alerts.push(["warn", "Most runs end on the rate limit.",
+      `${rl} of the last ${DATA.runs.length} logged runs stopped at the CSFloat rate-limit threshold before finishing a full lap of ${pos ? pos.total_strata : "all"} strata.`]);
+  }
+  if (s.min_snapshot_days_to_activate < 7) {
+    alerts.push(["info", `Signals switch on after ${s.min_snapshot_days_to_activate} day${s.min_snapshot_days_to_activate === 1 ? "" : "s"} of history.`,
+      `config.json sets min_snapshot_days_to_activate to ${s.min_snapshot_days_to_activate}. ${nf.format(DATA.items.filter(i => !i.stale && i.days >= 14).length)} skins in rotation now have 14+ days, so the README default of 14 would cost nothing.`]);
+  }
+  $("#alerts").innerHTML = alerts.map(([k, t, p]) => `<div class="alert ${k === "info" ? "info" : ""}"><span class="ico" aria-hidden="true">${k === "info" ? "i" : "!"}</span><div><b>${esc(t)}</b><p>${esc(p)}</p></div></div>`).join("");
+
+  const cov = DATA.coverage;
+  const avg = cov.length ? cov.slice(-14).reduce((a, c) => a + c.items, 0) / Math.min(14, cov.length) : 0;
+  $("#cov-sub").textContent = cov.length ? `last 14 days avg ${avg.toFixed(0)} skins/day` : "";
+  if (cov.length) {
+    barChart($("#coverage-chart"), {
+      dates: cov.map(c => c.date), values: cov.map(c => c.items),
+      color: css("--bar"), hiColor: css("--bar-hi"),
+      tipFn: i => `<b>${fmtDay(cov[i].date, { weekday: "short", month: "short", day: "numeric" })}</b><br><span class="num">${cov[i].items}</span> skins · <span class="num">${nf.format(cov[i].listings)}</span> listings`,
+    });
+  } else $("#coverage-chart").innerHTML = `<div class="empty">No snapshots yet.</div>`;
+
+  const outcome = { full_lap: ["ok", "Full lap"], time_budget: ["", "Paused"], rate_limit: ["bad", "Rate limit"], unknown: ["", "Unknown"] };
+  $("#runs").innerHTML = DATA.runs.length ? DATA.runs.slice(0, 6).map(r => {
+    const [cls, lbl] = outcome[r.outcome] || ["", r.outcome];
+    return `<li><span class="when">${fmtStamp(r.started_at)}</span><span class="pill ${cls}"><span class="dot"></span>${lbl}</span>
+      <span class="meta mono">${r.strata_processed ? `${esc(r.strata_processed)} strata` : ""}${r.skins_indexed ? ` · ${esc(r.skins_indexed)} skins` : ""}${r.elapsed ? ` · ${esc(r.elapsed)}` : ""}${r.rate_limit_left ? ` · ${esc(r.rate_limit_left)} req left` : ""}</span></li>`;
+  }).join("") : `<li class="muted">No runs logged yet.</li>`;
+}
+
+function renderMarket() {
+  const b = DATA.basket_index;
+  if (!b.points.length) {
+    $("#basket-desc").textContent = "Not enough overlapping history to build an index yet.";
+    $("#basket-chart").innerHTML = `<div class="empty">Needs skins with snapshots on 90% of collection days.</div>`;
+    return;
+  }
+  const last = b.points[b.points.length - 1][1];
+  $("#basket-desc").textContent = `Equal-weighted index of the ${b.members} skins (priced $1+) snapshotted on at least 90% of days. It is ${pct(last - 100)} since ${fmtDay(b.points[0][0])}.`;
+  lineChart($("#basket-chart"), {
+    dates: b.points.map(p => p[0]),
+    series: [{ values: b.points.map(p => p[1]), color: css("--accent") }],
+    area: true, refLine: 100, height: 220, yFmt: v => v.toFixed(0),
+    tipFn: i => `<b>${fmtDay(b.points[i][0], { weekday: "short", month: "short", day: "numeric" })}</b><br>Index <span class="num">${b.points[i][1].toFixed(1)}</span> (${pct(b.points[i][1] - 100)})<br><span class="num">${b.points[i][2]}</span> skins priced that day`,
   });
 }
 
-async function scanNow() {
-  document.getElementById('status').innerText = 'Scanning...';
-  const res = await fetch('/api/scan-now', { method: 'POST' });
-  const data = await res.json();
-  document.getElementById('status').innerText = `Found ${data.found} this scan`;
-  loadDeals();
+function renderDips() {
+  const s = DATA.settings;
+  const skipPenny = $("#dip-penny").checked;
+  const list = DATA.items
+    .filter(i => !i.stale && i.vs_baseline_pct != null && i.vs_baseline_pct < 0 && i.days >= s.min_snapshot_days_to_activate)
+    .filter(i => !skipPenny || i.latest_price >= 1)
+    .sort((a, b) => a.vs_baseline_pct - b.vs_baseline_pct)
+    .slice(0, 9);
+  $("#dips-desc").textContent = `Latest snapshot compared with the median of the ${s.baseline_window_days} snapshots before it. This uses CSFloat's reference price, not live listings; the scanner checks those.`;
+  $("#dips").innerHTML = list.length ? list.map(i => `
+    <button class="dip" type="button" data-name="${esc(i.name)}">
+      <span class="nm" title="${esc(i.name)}">${skinLabel(i)}</span>
+      <span class="chg">${pct(i.vs_baseline_pct)}</span>
+      <span class="px mono">${money(i.latest_price)} vs ${money(i.baseline_price)}</span>
+      ${rarityChip(i.rarity)}
+      <span class="spark">${sparkline(i.history.slice(-30), 240, 34)}</span>
+    </button>`).join("") : `<div class="panel empty">Nothing in rotation is below its baseline right now.</div>`;
+  $("#dips").querySelectorAll(".dip").forEach(b => b.addEventListener("click", () => select(b.dataset.name, true)));
 }
 
-async function clearDeals() {
-  await fetch('/api/clear', { method: 'POST' });
-  loadDeals();
+function fillFilters() {
+  const uniq = k => [...new Set(DATA.items.map(i => i[k]).filter(Boolean))];
+  const opts = (sel, vals) => sel.insertAdjacentHTML("beforeend", vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join(""));
+  opts($("#f-weapon"), uniq("weapon").sort());
+  opts($("#f-wear"), Object.keys(WEAR_SHORT).filter(w => uniq("wear").includes(w)));
+  opts($("#f-rarity"), uniq("rarity").sort((a, b) => (RARITY[a]?.[1] ?? 9) - (RARITY[b]?.[1] ?? 9)));
 }
 
-loadDeals();
-setInterval(loadDeals, 15000);
+function renderTable() {
+  const q = $("#q").value.trim().toLowerCase();
+  const fw = $("#f-weapon").value, fwe = $("#f-wear").value, fr = $("#f-rarity").value, act = $("#f-active").checked;
+  const rows = DATA.items.filter(i =>
+    (!q || i.name.toLowerCase().includes(q)) && (!fw || i.weapon === fw) && (!fwe || i.wear === fwe) &&
+    (!fr || i.rarity === fr) && (!act || !i.stale));
+  const k = state.sort, dir = state.dir;
+  rows.sort((a, b) => {
+    let x = a[k], y = b[k];
+    if (k === "rarity") { x = RARITY[x]?.[1] ?? -1; y = RARITY[y]?.[1] ?? -1; }
+    if (x == null && y == null) return 0;
+    if (x == null) return 1; if (y == null) return -1;
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * dir;
+  });
+  document.querySelectorAll("#items th.sortable").forEach(th =>
+    th.setAttribute("aria-sort", th.dataset.k === k ? (dir > 0 ? "ascending" : "descending") : "none"));
+  $("#count").textContent = `${rows.length} of ${DATA.items.length} skins`;
+  const tb = $("#items tbody");
+  tb.innerHTML = rows.length ? rows.map(i => `
+    <tr data-name="${esc(i.name)}" class="${i.stale ? "stale" : ""} ${state.selected === i.name ? "sel" : ""}" tabindex="0">
+      <td>${skinLabel(i)}${i.stale ? ` <span class="muted">· last ${fmtDay(i.last_date)}</span>` : ""}</td>
+      <td>${rarityChip(i.rarity)}</td>
+      <td class="num">${i.days}</td>
+      <td class="num">${money(i.latest_price)}</td>
+      <td class="num">${money(i.baseline_price)}</td>
+      <td class="num ${sgn(i.vs_baseline_pct)}">${pct(i.vs_baseline_pct)}</td>
+      <td class="num ${sgn(i.change_30d_pct)}">${pct(i.change_30d_pct)}</td>
+      <td class="num">${i.volatility_pct == null ? "–" : i.volatility_pct.toFixed(1) + "%"}</td>
+      <td class="num">${i.avg_listings.toFixed(1)}</td>
+      <td>${sparkline(i.history.slice(-30))}</td>
+    </tr>`).join("") : `<tr><td colspan="10" class="empty">No skins match these filters.</td></tr>`;
+}
+
+function rollingMedian(values, win) {
+  return values.map((_, i) => {
+    const w = values.slice(Math.max(0, i - win), i);
+    if (w.length < Math.min(win, 3)) return null;
+    const s = [...w].sort((a, b) => a - b), mid = s.length >> 1;
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+  });
+}
+
+function renderDetail() {
+  const el = $("#detail");
+  const it = DATA.items.find(i => i.name === state.selected);
+  if (!it) { el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  const win = DATA.settings.baseline_window_days;
+  const dates = it.history.map(h => h[0]), prices = it.history.map(h => h[1]);
+  const base = rollingMedian(prices, win);
+  el.innerHTML = `
+    <div class="detail">
+      <div style="min-width:0;display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+          <div><h3>${it.stattrak ? '<span class="st">StatTrak™</span>' : ""}${esc(it.base_name)}</h3>
+            <div class="muted">${esc(it.wear || "")}${it.wear ? " · " : ""}${rarityChip(it.rarity)}</div></div>
+          <button class="btn close" type="button" id="detail-close">Close</button>
+        </div>
+        <div class="legend"><span><i></i>Median reference price</span><span><i class="dash"></i>Rolling ${win}-day baseline</span></div>
+        <div class="chart" id="detail-chart"></div>
+        <div class="chart-title"><strong style="font-size:13px">Listings sampled per snapshot</strong></div>
+        <div class="chart" id="detail-listings"></div>
+      </div>
+      <dl class="facts">
+        <dt>Latest (${fmtDay(it.last_date)})</dt><dd>${money(it.latest_price)}</dd>
+        <dt>${win}-day baseline</dt><dd>${money(it.baseline_price)}</dd>
+        <dt>vs baseline</dt><dd class="${sgn(it.vs_baseline_pct)}">${pct(it.vs_baseline_pct)}</dd>
+        <dt>7-day change</dt><dd class="${sgn(it.change_7d_pct)}">${pct(it.change_7d_pct)}</dd>
+        <dt>30-day change</dt><dd class="${sgn(it.change_30d_pct)}">${pct(it.change_30d_pct)}</dd>
+        <dt>Range</dt><dd>${money(it.low)} – ${money(it.high)}</dd>
+        <dt>${win}-day volatility</dt><dd>${it.volatility_pct == null ? "–" : it.volatility_pct.toFixed(1) + "%"}</dd>
+        <dt>Snapshots</dt><dd>${it.days}</dd>
+        <dt>First seen</dt><dd>${fmtDay(it.first_date, { month: "short", day: "numeric", year: "numeric" })}</dd>
+        <dt>Avg listings / day</dt><dd>${it.avg_listings.toFixed(1)}</dd>
+        <dt>Status</dt><dd>${it.stale ? `<span class="pill warn"><span class="dot"></span>Out of rotation</span>` : `<span class="pill ok"><span class="dot"></span>In rotation</span>`}</dd>
+      </dl>
+    </div>`;
+  $("#detail-close").addEventListener("click", () => select(null));
+  if (dates.length === 1) {
+    $("#detail-chart").innerHTML = `<div class="empty">One snapshot so far (${money(prices[0])} on ${fmtDay(dates[0])}). A chart needs at least two.</div>`;
+    $("#detail-listings").innerHTML = "";
+    return;
+  }
+  lineChart($("#detail-chart"), {
+    dates,
+    series: [{ values: prices, color: css("--ink") }, { values: base, color: css("--accent"), dash: "5 4", width: 1.75 }],
+    height: 250, yFmt: v => "$" + (Math.abs(hiOf(prices)) < 2 ? v.toFixed(2) : v.toFixed(v >= 100 ? 0 : 1)),
+    tipFn: i => `<b>${fmtDay(dates[i], { weekday: "short", month: "short", day: "numeric" })}</b><br>Price <span class="num">${money(prices[i])}</span>${base[i] != null ? `<br>Baseline <span class="num">${money(base[i])}</span> (${pct((prices[i] - base[i]) / base[i] * 100)})` : ""}<br><span class="num">${it.history[i][2]}</span> listings`,
+  });
+  barChart($("#detail-listings"), {
+    dates, values: it.history.map(h => h[2]), height: 110, color: css("--bar"), hiColor: css("--bar-hi"),
+    tipFn: i => `<b>${fmtDay(dates[i])}</b><br><span class="num">${it.history[i][2]}</span> listings sampled`,
+  });
+}
+const hiOf = a => Math.max(...a);
+
+function select(name, scroll = false) {
+  state.selected = name;
+  renderDetail(); renderTable();
+  if (name && scroll) $("#explorer").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+}
+
+/* ---------- deals ---------- */
+async function loadDeals() {
+  let deals = [];
+  if (STATIC) deals = window.__DEALS__ || [];
+  else { try { deals = await (await fetch("/api/deals")).json(); } catch (e) { deals = []; } }
+  const el = $("#deals");
+  if (!deals.length) {
+    el.innerHTML = `<div class="empty">No deals recorded yet. ${STATIC || DATA.public_mode ? "The scanner hasn't flagged any listings yet." : DATA.scanner_enabled ? "The background scanner checks every " + Math.round((DATA.settings.scan_interval_seconds || 900) / 60) + " minutes, or press Scan now." : "Set CSFLOAT_API_KEY in .env and restart app.py to turn scanning on."}</div>`;
+    return;
+  }
+  el.innerHTML = `<table><thead><tr><th>Found</th><th>Item</th><th class="num">Price</th><th class="num">Baseline</th><th class="num">Dip</th><th class="num">Est. profit</th><th class="num">Profit %</th><th class="num">Listings in window</th><th></th></tr></thead><tbody>
+    ${deals.map(d => `<tr><td class="muted">${fmtStamp(d.found_at * 1000)}</td><td>${esc(d.market_hash_name)}</td>
+      <td class="num">${money(d.current_price)}</td><td class="num">${money(d.baseline_price)}</td>
+      <td class="num neg">${pct(-d.dip_percentage)}</td><td class="num">${money(d.est_profit)}</td>
+      <td class="num">${pct(d.est_profit_percentage)}</td><td class="num">${d.sales_in_window}</td>
+      <td><a href="${esc(d.url)}" target="_blank" rel="noopener">View on CSFloat</a></td></tr>`).join("")}
+    </tbody></table>`;
+}
+
+function wireDealControls() {
+  if (STATIC || DATA.public_mode) return;
+  $("#deal-controls").hidden = false;
+  const scan = $("#scan-btn"), clear = $("#clear-btn"), status = $("#scan-status");
+  if (!DATA.scanner_enabled) { scan.disabled = true; status.textContent = "Scanning needs CSFLOAT_API_KEY."; }
+  scan.addEventListener("click", async () => {
+    scan.disabled = true; status.textContent = "Scanning live listings…";
+    try {
+      const r = await (await fetch("/api/scan-now", { method: "POST" })).json();
+      status.textContent = r.error ? r.error : `Scan finished: ${r.found} candidate${r.found === 1 ? "" : "s"}.`;
+    } catch (e) { status.textContent = "Scan failed. Check the app.py console for the error."; }
+    scan.disabled = false; loadDeals();
+  });
+  let armed = false;
+  clear.addEventListener("click", async () => {
+    if (!armed) { armed = true; clear.textContent = "Confirm clear"; setTimeout(() => { armed = false; clear.textContent = "Clear deals"; }, 4000); return; }
+    armed = false; clear.textContent = "Clear deals";
+    await fetch("/api/clear", { method: "POST" }); status.textContent = "Deals cleared."; loadDeals();
+  });
+}
+
+/* ---------- boot ---------- */
+function renderCharts() { renderCollection(); renderMarket(); renderDetail(); }
+
+async function boot() {
+  try {
+    DATA = STATIC ? window.__DATASET__ : await (await fetch("/api/dataset")).json();
+  } catch (e) {
+    $("#subtitle").textContent = "Couldn't load /api/dataset. Is app.py running?";
+    return;
+  }
+  renderHeader(); renderCollection(); renderMarket(); renderDips(); fillFilters(); renderTable();
+  wireDealControls(); loadDeals();
+  $("#footer").textContent = `Prices are the median CSFloat reference price across the cheapest buy-now listings in each skin/wear stratum ($${DATA.settings.min_price}–$${DATA.settings.max_price} listings). Data generated ${fmtStamp(DATA.generated_at)}.`;
+
+  ["#q", "#f-weapon", "#f-wear", "#f-rarity", "#f-active"].forEach(s => $(s).addEventListener("input", renderTable));
+  $("#dip-penny").addEventListener("input", renderDips);
+  document.querySelectorAll("#items th.sortable").forEach(th => th.addEventListener("click", () => {
+    const k = th.dataset.k;
+    if (state.sort === k) state.dir *= -1; else { state.sort = k; state.dir = ["name", "rarity"].includes(k) ? 1 : (k === "vs_baseline_pct" || k === "change_30d_pct" ? 1 : -1); }
+    renderTable();
+  }));
+  const tb = $("#items tbody");
+  tb.addEventListener("click", e => { const tr = e.target.closest("tr[data-name]"); if (tr) select(tr.dataset.name === state.selected ? null : tr.dataset.name); });
+  tb.addEventListener("keydown", e => { if (e.key === "Enter") { const tr = e.target.closest("tr[data-name]"); if (tr) select(tr.dataset.name); } });
+
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(renderCharts, 150); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderCharts);
+  new MutationObserver(renderCharts).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+  if (!STATIC) setInterval(loadDeals, 30000);
+}
+boot();
+})();
 </script>
 </body>
 </html>

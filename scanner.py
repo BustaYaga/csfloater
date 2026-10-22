@@ -3,7 +3,7 @@ Dip / mean-reversion scanner.
 
 Strategy: for each CSFloat listing in our watch categories, pull the item's
 own first-party price history (collected daily by snapshot_job.py into
-snapshots.db), compute a baseline price (median over `baseline_window_days`),
+the snapshots table in deals.db), compute a baseline price (median over `baseline_window_days`),
 and flag it if the current listing is meaningfully below that baseline AND
 has enough tracked history to be confident you can exit later.
 
@@ -24,28 +24,48 @@ import db
 class DipScanner:
     def __init__(self, config):
         self.config = config
-        self.csfloat = CSFloatClient(config["csfloat_api_key"])
+        self.csfloat = CSFloatClient(
+            config["csfloat_api_key"],
+            request_delay=config.get("request_delay", 3.0),
+            rate_state_file=config.get("rate_state_file", "rate_state.json"),
+        )
 
     # ---------- data gathering ----------
+
+    def _rate_limit_ok(self):
+        """Same gate as snapshot_job.py: refuse to send requests once the
+        remaining CSFloat allowance is at or below rate_limit_stop_threshold."""
+        status, seconds_left = self.csfloat.check_rate_limit_status(
+            self.config.get("rate_limit_stop_threshold", 10),
+            self.config.get("rate_limit_warn_threshold", 50),
+        )
+        if status == "stop":
+            print(f"[DipScanner] Rate limit threshold reached "
+                  f"({self.csfloat.rate_remaining}/{self.csfloat.rate_limit} left, "
+                  f"resets in {int(seconds_left or 0)}s) - skipping the rest of this scan.")
+            return False
+        return True
 
     def fetch_candidate_listings(self):
         cfg = self.config
         all_listings = []
+        # The listings endpoint can't filter by wear, so fetch each weapon
+        # once and filter wears locally (analyze_dip_deals checks wear too).
         for weapon_name, def_index in cfg["weapon_def_indices"].items():
-            for wear in cfg["allowed_wears"]:
-                listings = self.csfloat.fetch_listings(
-                    def_index=def_index,
-                    min_price_cents=int(cfg["min_price"] * 100),
-                    max_price_cents=int(cfg["max_price"] * 100),
-                    max_pages=cfg["scanner_pages_per_stratum"],
-                    sort_by="lowest_price",
-                    type_="buy_now",
-                )
-                all_listings.extend(
-                    l for l in listings
-                    if l.get("item", {}).get("wear_name") == wear
-                )
-                # time.sleep(self.csfloat.request_delay)
+            if not self._rate_limit_ok():
+                break
+            listings = self.csfloat.fetch_listings(
+                def_index=def_index,
+                min_price_cents=int(cfg["min_price"] * 100),
+                max_price_cents=int(cfg["max_price"] * 100),
+                max_pages=cfg["scanner_pages_per_stratum"],
+                sort_by="lowest_price",
+                type_="buy_now",
+            )
+            all_listings.extend(
+                l for l in listings
+                if l.get("item", {}).get("wear_name") in cfg["allowed_wears"]
+            )
 
         return all_listings
 

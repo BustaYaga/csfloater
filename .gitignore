@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+dashboard_export.html
