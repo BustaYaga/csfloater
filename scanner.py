@@ -14,11 +14,15 @@ Note: an item won't be considered until it has at least
 `min_snapshot_days_to_activate` days of self-collected history - see
 snapshot_job.py, which needs to run daily to build that dataset up.
 """
+import re
 import statistics
 import time
 
 from clients.csfloat_client import CSFloatClient
 import db
+
+
+LISTING_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 class DipScanner:
@@ -92,6 +96,9 @@ class DipScanner:
 
         for item in listings:
             try:
+                listing_id = str(item.get("id", ""))
+                if not LISTING_ID_RE.match(listing_id):
+                    continue  # the id ends up in a link, so only accept plain tokens
                 info = item.get("item", {})
                 name = info.get("market_hash_name", "")
                 if info.get("is_souvenir"):
@@ -150,7 +157,7 @@ class DipScanner:
                 est_profit_pct = (est_profit / listing_price) * 100 if listing_price > 0 else 0
 
                 deals.append({
-                    "listing_id": item.get("id"),
+                    "listing_id": listing_id,
                     "market_hash_name": name,
                     "strategy": "Historical Dip / Mean Reversion",
                     "current_price": listing_price,
@@ -159,7 +166,7 @@ class DipScanner:
                     "est_profit": est_profit,
                     "est_profit_percentage": est_profit_pct,
                     "sales_in_window": sales_in_window,
-                    "url": f"https://csfloat.com/item/{item.get('id')}",
+                    "url": f"https://csfloat.com/item/{listing_id}",
                     "details": {
                         "baseline_window_days": baseline_window,
                         "recent_sale_prices": baseline_prices[-5:],

@@ -1,8 +1,10 @@
-import sqlite3
 import json
+import os
+import sqlite3
 import time
 
-DB_PATH = "deals.db"
+# CSFLOAT_DB lets the demo (and tests) point at a different database file.
+DB_PATH = os.environ.get("CSFLOAT_DB", "deals.db")
 
 
 def init_db():

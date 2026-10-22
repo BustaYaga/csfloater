@@ -10,7 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def load_config(path="config.json", require_api_key=True):
+def load_config(path=None, require_api_key=True):
+    path = path or os.environ.get("CSFLOAT_CONFIG", "config.json")
     with open(path, encoding="utf-8") as f:
         config = json.load(f)
 

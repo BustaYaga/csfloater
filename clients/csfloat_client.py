@@ -160,7 +160,7 @@ class CSFloatClient:
                     time.sleep(wait)
                     continue
                 if resp.status_code == 403:
-                    print("[CSFloatClient] 403 Forbidden - check your API key in config.json")
+                    print("[CSFloatClient] 403 Forbidden - check CSFLOAT_API_KEY in your .env")
                     return None
                 resp.raise_for_status()
                 return resp.json()

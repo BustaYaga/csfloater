@@ -1,160 +1,140 @@
-# CSFloat Dip Scanner
+# CSFloat Dip Scanner (v0.4.1 prototype / demo)
 
 Builds your own daily price history for CS2 skins on CSFloat, then flags
 live listings priced well below a skin's recent baseline, on the bet that
-the price reverts. Comes with a local dashboard for exploring the data and
-a calibration tool that tunes the strategy from your own history.
+the price reverts. Includes a dashboard, a calibration tool and a
+**self-contained demo with synthetic data** so you can see the full flow
+without an API key.
 
-Everything runs on your machine (or in GitHub Actions) against the official
-CSFloat API with your own key. Nothing is hosted.
+> **Branches.** `main` is the public demo/release: no real market data, keys
+> or logs; everything in `demo/` is generated. `develop` carries the same code
+> plus the real `deals.db`, logs and scan position, updated daily by the
+> snapshot workflow. Live demo page: GitHub Pages for this repo (Settings >
+> Pages > Source: GitHub Actions). See [SECURITY.md](SECURITY.md).
+
+## Try the demo (no key, no network)
+
+Fastest: open **`demo/demo.html`** in a browser. It is a single offline file
+with the demo data baked in. You can browse the collection health, the
+market index, skins below baseline, per-skin history and the flagged deals.
+
+Or run it as the real app:
+
+```bash
+pip install -r requirements.txt
+python run_demo.py            # http://127.0.0.1:5000, read-only
+python run_demo.py --regenerate --export   # rebuild demo data and demo/demo.html
+```
+
+What you will see: ~130 skins × 100 days of synthetic prices, 9 skins that
+end on a dip, and 8 flagged deals. The deals are produced by feeding fake
+listings through the real `DipScanner.analyze_dip_deals()` (same baseline,
+dip window, fee and profit-tier rules as production), not typed in by hand.
+Scan / Clear are disabled in demo mode and the API key is never read.
 
 ## How it works
 
 | Step | Script | What it does |
 |---|---|---|
 | 1 | `discover_def_indices.py` | Finds CSFloat's `def_index` for each weapon you want to track. |
-| 2 | `discover_paint_indices.py` | Builds `skin_catalog.json`: every skin (and its rarity) for those weapons. |
-| 3 | `snapshot_job.py` | Run daily. Records a median reference price per skin + wear into `deals.db`. Resumes where it stopped and respects the rate limit. |
+| 2 | `discover_paint_indices.py` | Builds `skin_catalog.json`: every skin and its rarity. |
+| 3 | `snapshot_job.py` | Run daily. Stores a median reference price per skin + wear in `deals.db`. Resumable, rate-limit aware. |
 | 4 | `calibrate_config.py` | Replays your history and recommends dip thresholds, baseline window and profit tiers. |
-| 5 | `scanner.py` | Pulls live buy-now listings and flags ones far enough below baseline to clear the fee and your profit targets. |
-| 6 | `app.py` | Local dashboard: collection health, market index, skins below baseline, per-skin price history, flagged deals. |
+| 5 | `scanner.py` | Pulls live buy-now listings; flags those far enough under baseline to clear fees and profit targets. |
+| 6 | `app.py` | Dashboard on `deals.db`: collection health, market index, below-baseline skins, history, deals. |
 
-A skin is only considered by the scanner after it has
-`min_snapshot_days_to_activate` days of history (80 in the shipped config),
-so expect to run the snapshot job for a while before seeing any deals.
+A skin is scanned only after `min_snapshot_days_to_activate` days of history
+(80 in the shipped config).
 
-## Setup
-
-Python 3.10+.
+## Using it for real
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env        # then put your key in .env
+cp .env.example .env          # put CSFLOAT_API_KEY in it (CSFloat profile > Developer tab)
+
+python discover_def_indices.py "AK-47" "M4A4"   # copy ids into config.json
+python discover_paint_indices.py                # builds skin_catalog.json
+python snapshot_job.py                          # daily; --restart for a fresh pass
+python calibrate_config.py [--write]            # after 40+ days of data
+python scanner.py                               # one scan
+python app.py                                   # dashboard + scan every 15 min
+python export_dashboard.py                      # offline dashboard_export.html
 ```
 
-`CSFLOAT_API_KEY` comes from your CSFloat profile, Developer tab. Never
-commit `.env`; it is already in `.gitignore`.
+Your data lives in `deals.db`, `scan_position.json`, `rate_state.json` and
+`logs/`; all are git-ignored. **Do not commit them to a public repo.** Run the
+snapshot job from cron/Task Scheduler, or let the bundled workflows do it:
+`snapshot.yml` (daily) and `scan.yml` (manual) live on `main` because
+scheduled workflows only run from the default branch, but they check out
+`develop` and commit the data there. Add `CSFLOAT_API_KEY` as a repository
+secret. Note that on a public repo that publishes `develop`'s data.
 
-### Choose what to track
+### Environment variables
 
-1. List the weapons you want and find their IDs:
-   ```bash
-   python discover_def_indices.py "AK-47" "M4A4" "AWP"
-   ```
-   Copy the numbers into `weapon_def_indices` in `config.json`.
-2. Build the skin catalog:
-   ```bash
-   python discover_paint_indices.py
-   ```
-   Re-run it now and then to pick up newly released skins.
+| Variable | Purpose |
+|---|---|
+| `CSFLOAT_API_KEY` | Your key (real runs only). Never logged or served. |
+| `CSFLOAT_DB` / `CSFLOAT_CONFIG` | Alternate database / config file (the demo uses these). |
+| `DEMO_MODE=1` | Read-only, ignores the key. Set by `run_demo.py`. |
+| `PUBLIC_MODE=1` | Read-only for visitors; no scan/clear. |
+| `ALLOWED_HOSTS` | Comma list of Host headers to accept (default localhost). `*` disables. |
 
-### Collect history every day
-
-```bash
-python snapshot_job.py              # resumes from scan_position.json
-python snapshot_job.py --restart    # start a fresh pass from the first skin
-```
-
-Schedule it once a day (cron, Windows Task Scheduler, or GitHub Actions).
-`.github/workflows/snapshot.yml` is a ready-made Actions schedule: add
-`CSFLOAT_API_KEY` as a repository secret and it runs, then commits
-`deals.db`, `scan_position.json` and the log back to the repo. Each run
-stops on its own when the rate limit gets close, and the next run carries on
-from the same place.
-
-### Tune the strategy to your data
-
-Once you have 40+ days of history:
-
-```bash
-python calibrate_config.py           # report only
-python calibrate_config.py --write   # apply to config.json
-```
-
-It assumes a 7-day hold (the CS2 trade lock), tests baseline windows of
-7–28 days, and finds which dip sizes actually recovered by more than the
-fee. Re-run it every few weeks; the right values move with the market.
-
-### Scan and view
-
-```bash
-python scanner.py   # one scan, prints and saves flagged deals
-python app.py       # dashboard at http://127.0.0.1:5000, scans every 15 min
-```
-
-The dashboard only reads `deals.db`, so it also works without an API key
-(scanning is just switched off). `PUBLIC_MODE=1 python app.py` hides the
-Scan now / Clear buttons and blocks those endpoints.
-
-`python export_dashboard.py` writes `dashboard_export.html`, a single
-offline file with the current data baked in.
-
-`.github/workflows/scan.yml` runs one scan in GitHub Actions on demand
-(Actions tab → Dip Scan → Run workflow).
-
-### Use the data in your own analytics
-
-All history lives in SQLite, so any tool can read it:
-
-```sql
--- deals.db
-SELECT market_hash_name, snapshot_date, price, listing_count FROM snapshots;
-SELECT * FROM deals ORDER BY found_at DESC;
-```
-
-From Python, `analytics.build_dataset(config)` returns the same per-skin
-summaries, coverage and index the dashboard uses, as plain dicts.
+### Hosting publicly
+Use `PUBLIC_MODE=1`, set `ALLOWED_HOSTS`, run behind a reverse proxy with
+TLS and rate limiting, and use a production WSGI server (gunicorn/waitress)
+instead of `app.py`'s dev server, which binds to `127.0.0.1` only.
 
 ## Configuration (`config.json`)
 
-The shipped values were calibrated on 85 days of AK-47 / M4A4 data
-(Jul–Oct 2026), a period when tracked prices fell about 22%. Calibrate on
-your own data before relying on them.
+The shipped strategy values were calibrated on 85 days of AK-47 / M4A4 data
+(Jul–Oct 2026), a period when prices fell about 22%. Re-calibrate on your own data.
 
-| Key | Shipped | Meaning |
-|---|---|---|
-| `weapon_def_indices` | AK-47, M4A4 | Weapons to track, name → CSFloat `def_index`. |
-| `allowed_wears` | FN, MW, FT | Wears to snapshot and scan. |
-| `min_price` / `max_price` | 5 / 100 | USD price range of listings fetched. Keep it fixed once collecting, or old and new history won't be comparable. |
-| `min_snapshot_days_to_activate` | 80 | Days of history a skin needs before it can be flagged. |
-| `baseline_window_days` | 7 | Snapshots in the median baseline. In calibration a 7-day baseline was the only window whose 10%+ dips beat the fee. |
-| `min_sales_in_window` | 5 | Snapshot days required inside the window, so gaps don't skew the baseline. |
-| `min_dip_percentage` | 15 | Smallest dip flagged. Dips under 10% kept falling (−1% to −1.6% a week later). |
-| `max_dip_percentage` | 30 | Deepest dip flagged. Deeper drops are more often repricings than bargains; none were observed in this data. |
-| `recent_days_for_current_price` | 0 | Newest snapshot days left out of the baseline. |
-| `csfloat_fee_percentage` | 2.0 | CSFloat seller fee, subtracted from estimated profit. |
-| `dynamic_profit_targets` | 3 tiers | Per price tier, a deal must clear `min_profit_usd` **or** `min_profit_percentage`. Tiers split at the terciles of tracked prices; targets sit above each tier's typical weekly move (7% under $14, about 4% above). |
-| `scanner_pages_per_stratum` | 2 | Pages of 50 listings fetched per weapon per scan. |
-| `scan_interval_seconds` | 900 | Pause between scans when `app.py` runs the scanner in the background. |
-| `request_delay` | 3.0 | Seconds between API requests. |
-| `rate_limit_stop_threshold` | 10 | Stop when this many requests are left. |
-| `rate_limit_warn_threshold` | 50 | Warn when this many requests are left. |
-| `max_batch_seconds` | 600 | Time budget per snapshot run. |
-| `scan_position_file`, `skin_catalog_file`, `rate_state_file` | | Where the jobs keep their state. |
+| Key | Meaning |
+|---|---|
+| `weapon_def_indices` | Weapons to track, name → CSFloat `def_index`. |
+| `allowed_wears` | Wears to snapshot and scan. |
+| `min_price` / `max_price` | USD range of listings fetched. Keep fixed once collecting. |
+| `min_snapshot_days_to_activate` | History a skin needs before it can be flagged. |
+| `baseline_window_days` | Snapshots in the median baseline. |
+| `min_sales_in_window` | Snapshot days required in the window. |
+| `min_dip_percentage` / `max_dip_percentage` | Dip range flagged (deeper is usually a repricing). |
+| `recent_days_for_current_price` | Newest days left out of the baseline. |
+| `csfloat_fee_percentage` | Seller fee subtracted from estimated profit. |
+| `dynamic_profit_targets` | Per price tier, a deal must clear `min_profit_usd` **or** `min_profit_percentage`. |
+| `scanner_pages_per_stratum` | Pages of 50 listings per weapon per scan. |
+| `scan_interval_seconds` | Pause between background scans in `app.py`. |
+| `request_delay`, `rate_limit_stop_threshold`, `rate_limit_warn_threshold`, `max_batch_seconds` | Pacing and budget. |
+| `scan_position_file`, `skin_catalog_file`, `rate_state_file`, `log_file` | Where state is kept. |
+
+## Tests and checks
+
+```bash
+pip install pytest bandit pip-audit
+python -m pytest -q tests
+bandit -q -r . -x ./tests
+pip-audit -r requirements.txt
+```
+CI (`.github/workflows/ci.yml`) runs the same, with read-only permissions and no secrets.
 
 ## Limitations
 
-- **Reference prices, not sales.** Snapshots store CSFloat's
-  `predicted_price` for the cheapest listings in each stratum, not completed
-  trades. The scanner compares a real asking price against that baseline.
-- **No forecasting.** The strategy assumes prices revert. Calibration tells
-  you how often that held in your history; it can't tell you about next
-  week. In a falling market most dips keep falling.
-- **Thin evidence at the extremes.** Deep dips are rare, so the upper
-  thresholds rest on few events. The calibration report prints the counts.
-- **Rate limits are shared.** The snapshot job, the scanner and anything else
-  using your key draw from the same CSFloat allowance.
+- **Reference prices, not sales.** Snapshots store CSFloat's `predicted_price`, not completed trades.
+- **No forecasting.** Assumes reversion; in a falling market most dips keep falling.
+- **Thin evidence at the extremes.** Deep dips are rare; the calibration report prints counts.
+- **Shared rate limits** across the snapshot job, scanner and anything else on your key.
 - **Buy orders aren't covered.** Only active buy-now listings are scanned.
+- Not financial advice; the demo's numbers are fiction.
 
 ## Files
 
 | Path | Purpose |
 |---|---|
+| `app.py` | Flask dashboard + API (`/api/dataset`, `/api/deals`, guarded `/api/scan-now`, `/api/clear`). |
+| `run_demo.py` | Launches the demo. |
+| `demo/` | `generate_demo_data.py`, `demo.db`, `config.demo.json`, `demo.html`, demo log/position. |
+| `scanner.py`, `snapshot_job.py`, `calibrate_config.py`, `analytics.py` | Strategy, collection, tuning, summaries. |
 | `clients/csfloat_client.py` | CSFloat API client with rate-limit tracking. |
-| `db.py` | SQLite schema and helpers (`deals.db`). |
-| `analytics.py` | Read-only summaries of the snapshot history. |
-| `config_loader.py` | Merges `.env` secrets into `config.json`. |
-| `terminal_colors.py` | Console colours (rarity-coloured skin names). |
-| `debug_scan.py` | Shows what the scanner sees with no filters applied. |
-| `templates/index.html` | The dashboard page. |
-| `changelogs.txt` | Version history. |
+| `db.py`, `config_loader.py`, `export_dashboard.py`, `terminal_colors.py`, `debug_scan.py` | Support. |
+| `templates/index.html` | The dashboard page (self-contained). |
+| `tests/` | pytest suite. |
+| `SECURITY.md`, `changelogs.txt` | Security notes, version history. |

@@ -7,6 +7,7 @@ baked in, so it can be opened offline or shared without running app.py.
 """
 import argparse
 import json
+import os
 
 import analytics
 import db
@@ -29,6 +30,7 @@ def main():
     config = load_config(require_api_key=False)
     db.init_db()
     dataset = analytics.build_dataset(config)
+    dataset["demo_mode"] = os.environ.get("DEMO_MODE", "").lower() in ("1", "true", "yes")
     deals = db.get_recent_deals()
 
     with open(TEMPLATE, encoding="utf-8") as f:

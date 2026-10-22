@@ -27,7 +27,7 @@ def enable_windows_ansi():
     call once at the very start of your entry-point script.
     """
     if os.name == "nt":
-        os.system("")
+        os.system("")  # nosec B605 B607 - constant empty command, no user input
 
 
 def hex_to_rgb(hex_color: str):

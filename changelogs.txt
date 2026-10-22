@@ -31,3 +31,14 @@ fix(snapshot): fix duplicated weapon name and stale processed-count in progress 
 fix(client): remove redundant per-page delay now superseded by fixed per-request delay
 fix(config): use config_loader/UTF-8-safe file I/O throughout to avoid Windows cp1252 crashes
 chore(config): remove unused included_weapons/pages_per_stratum keys, add weapon_def_indices
+v0.4.1-demo
+feat(demo): synthetic demo dataset (demo/generate_demo_data.py), seeded and reproducible; deals come from the real DipScanner.analyze_dip_deals
+feat(demo): run_demo.py starts the dashboard read-only on demo data (no API key, no network); demo/demo.html is an offline copy
+feat(app): DEMO_MODE, Host-header allowlist, CSRF header on POST, CSP and other security headers, explicit 127.0.0.1 bind
+fix(ui): escape unknown run-outcome labels; only link to https://csfloat.com/item/<id>; [hidden] now really hides; drop Google Fonts (no third-party requests)
+fix(scanner): reject listing ids that aren't plain tokens before building links
+fix(deps): Flask 3.1.3, requests 2.34.2, python-dotenv 1.2.3 (clears all pip-audit findings on the old pins)
+chore(release): real deals.db, logs, scan position and snapshot/scan workflows removed; deals.db, logs/ and scan_position.json git-ignored; CI added (tests, bandit, pip-audit)
+test: tests/ for demo app, read-only guarantees and headers
+docs: SECURITY.md, README rewritten
+chore(ci): snapshot.yml / scan.yml run from main but check out and commit to develop; pages.yml publishes demo/demo.html to GitHub Pages

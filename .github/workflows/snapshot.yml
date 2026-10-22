@@ -1,5 +1,8 @@
 name: Daily CSFloat Snapshot
 
+# Scheduled workflows only run from the default branch (main), but the real
+# data lives on `develop`: this job checks out develop, takes the snapshot
+# and commits deals.db / logs / scan_position.json back to develop.
 on:
   schedule:
     # 23:55 UTC corresponds to 05:25 AM IST
@@ -14,32 +17,33 @@ concurrency:
   group: deals-db
   cancel-in-progress: false
 
+permissions:
+  contents: write
+
 jobs:
-  run-script:
+  snapshot:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: '3.10'
+          ref: develop
 
-      - name: Install exact dependencies
-        run: |
-          pip install flask==3.0.3 requests==2.32.3 python-dotenv==1.0.1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-      - name: Execute Snapshot Script
+      - run: pip install -r requirements.txt
+
+      - name: Execute snapshot script
         env:
-          # This pulls the hidden key from GitHub settings and loads it into your script
           CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
-        run: python snapshot_job.py 
+        run: python snapshot_job.py
 
-      - name: Commit and Push Snapshot Files
+      - name: Commit and push snapshot files to develop
         run: |
-          git config --global user.name 'GitHub Actions Bot'
-          git config --global user.email 'actions@github.com'
-          git add deals.db logs/snapshot_job.log scan_position.json
+          git config user.name 'BustaYaga'
+          git config user.email 'gamerac8317@gmail.com'
+          git add -f deals.db logs/snapshot_job.log scan_position.json
           git diff-index --quiet HEAD || git commit -m "chore: Database Auto-Snapshot"
-          git push
+          git pull --rebase origin develop
+          git push origin HEAD:develop

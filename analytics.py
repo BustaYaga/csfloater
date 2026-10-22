@@ -247,6 +247,6 @@ def build_dataset(config, db_path=None):
         "coverage": [{"date": d, "items": per_day[d][0], "listings": per_day[d][1]}
                      for d in dates],
         "basket_index": _basket_index(items_hist, dates),
-        "runs": _read_runs(os.path.join("logs", "snapshot_job.log")),
+        "runs": _read_runs(config.get("log_file", os.path.join("logs", "snapshot_job.log"))),
         "items": items,
     }

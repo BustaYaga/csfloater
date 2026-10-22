@@ -1,7 +1,22 @@
+# Secrets
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# develop tracks the real data files (deals.db, logs/, scan_position.json)
+*.db-journal
 rate_state.json
+dashboard_export.html
+
+# Bundled demo data lives in demo/ and is intentionally committed
+!demo/demo.db
+demo/.rate_state_unused.json
+
 __pycache__/
 *.pyc
 .venv/
 venv/
-dashboard_export.html
+.pytest_cache/
+!demo/
