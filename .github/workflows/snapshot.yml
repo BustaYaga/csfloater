@@ -1,0 +1,49 @@
+name: Daily CSFloat Snapshot
+
+# Scheduled workflows only run from the default branch (main), but the real
+# data lives on `develop`: this job checks out develop, takes the snapshot
+# and commits deals.db / logs / scan_position.json back to develop.
+on:
+  schedule:
+    # 23:55 UTC corresponds to 05:25 AM IST
+    - cron: '55 19 * * *'
+    - cron: '55 20 * * *'
+    - cron: '55 22 * * *'
+    - cron: '55 23 * * *'
+  workflow_dispatch:
+
+# Shares a group with the dip scan so the two never write deals.db at once.
+concurrency:
+  group: deals-db
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Execute snapshot script
+        env:
+          CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
+        run: python snapshot_job.py
+
+      - name: Commit and push snapshot files to develop
+        run: |
+          git config user.name 'BustaYaga'
+          git config user.email 'gamerac8317@gmail.com'
+          git add -f deals.db logs/snapshot_job.log scan_position.json
+          git diff-index --quiet HEAD || git commit -m "chore: Database Auto-Snapshot"
+          git pull --rebase origin develop
+          git push origin HEAD:develop
