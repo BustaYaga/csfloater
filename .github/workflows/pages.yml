@@ -1,7 +1,8 @@
 name: Demo page
 
 # Publishes demo/demo.html (synthetic data only) as the GitHub Pages site.
-# One-time setup: Settings > Pages > Source: "GitHub Actions".
+# If the deploy fails with "Get Pages site failed ... Not Found", enable it once:
+# Settings > Pages > Source: "GitHub Actions", then re-run this workflow.
 on:
   push:
     branches: [main]
@@ -27,6 +28,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: mkdir _site && cp demo/demo.html _site/index.html
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
