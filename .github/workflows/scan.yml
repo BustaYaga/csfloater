@@ -1,0 +1,39 @@
+name: Dip Scan
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deals-db
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run one dip scan
+        env:
+          CSFLOAT_API_KEY: ${{ secrets.CSFLOAT_API_KEY }}
+        run: python scanner.py
+
+      - name: Commit flagged deals to develop
+        run: |
+          git config user.name 'BustaYaga'
+          git config user.email 'gamerac8317@gmail.com'
+          git add -f deals.db
+          git diff-index --quiet HEAD || git commit -m "chore: Dip scan results"
+          git pull --rebase origin develop
+          git push origin HEAD:develop

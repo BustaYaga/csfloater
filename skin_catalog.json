@@ -1,0 +1,370 @@
+{
+  "M4A4": {
+    "309": {
+      "name": "M4A4 | Howl",
+      "rarity": "Contraband"
+    },
+    "1463": {
+      "name": "M4A4 | Falak",
+      "rarity": "Classified"
+    },
+    "1097": {
+      "name": "M4A4 | Spider Lily",
+      "rarity": "Restricted"
+    },
+    "1210": {
+      "name": "M4A4 | Choppa",
+      "rarity": "Mil-Spec Grade"
+    },
+    "695": {
+      "name": "M4A4 | Neo-Noir",
+      "rarity": "Covert"
+    },
+    "1165": {
+      "name": "M4A4 | Etch Lord",
+      "rarity": "Restricted"
+    },
+    "1228": {
+      "name": "M4A4 | Temukau",
+      "rarity": "Covert"
+    },
+    "480": {
+      "name": "M4A4 | Evil Daimyo",
+      "rarity": "Restricted"
+    },
+    "1266": {
+      "name": "M4A4 | Naval Shred Camo",
+      "rarity": "Industrial Grade"
+    },
+    "971": {
+      "name": "M4A4 | Tooth Fairy",
+      "rarity": "Classified"
+    },
+    "1432": {
+      "name": "M4A4 | Zubastick",
+      "rarity": "Mil-Spec Grade"
+    },
+    "811": {
+      "name": "M4A4 | Magnesium",
+      "rarity": "Mil-Spec Grade"
+    },
+    "512": {
+      "name": "M4A4 | Royal Paladin",
+      "rarity": "Covert"
+    },
+    "844": {
+      "name": "M4A4 | The Emperor",
+      "rarity": "Covert"
+    },
+    "118": {
+      "name": "M4A4 | Turbine",
+      "rarity": "Restricted"
+    },
+    "588": {
+      "name": "M4A4 | Desolate Space",
+      "rarity": "Classified"
+    },
+    "1446": {
+      "name": "M4A4 | Dark Operative",
+      "rarity": "Mil-Spec Grade"
+    },
+    "1209": {
+      "name": "M4A4 | Hellish",
+      "rarity": "Classified"
+    },
+    "780": {
+      "name": "M4A4 | Mainframe",
+      "rarity": "Industrial Grade"
+    },
+    "985": {
+      "name": "M4A4 | Cyber Security",
+      "rarity": "Classified"
+    },
+    "187": {
+      "name": "M4A4 | Zirka",
+      "rarity": "Restricted"
+    },
+    "1364": {
+      "name": "M4A4 | Aeolian Dark",
+      "rarity": "Industrial Grade"
+    },
+    "1255": {
+      "name": "M4A4 | Eye of Horus",
+      "rarity": "Covert"
+    },
+    "793": {
+      "name": "M4A4 | Converter",
+      "rarity": "Mil-Spec Grade"
+    },
+    "1149": {
+      "name": "M4A4 | Poly Mag",
+      "rarity": "Mil-Spec Grade"
+    },
+    "1281": {
+      "name": "M4A4 | Sheet Lightning",
+      "rarity": "Restricted"
+    },
+    "384": {
+      "name": "M4A4 | Griffin",
+      "rarity": "Restricted"
+    },
+    "336": {
+      "name": "M4A4 | Desert-Strike",
+      "rarity": "Covert"
+    },
+    "400": {
+      "name": "M4A4 | 龍王 (Dragon King)",
+      "rarity": "Classified"
+    },
+    "926": {
+      "name": "M4A4 | Red DDPAT",
+      "rarity": "Restricted"
+    },
+    "874": {
+      "name": "M4A4 | Polysoup",
+      "rarity": "Restricted"
+    },
+    "1353": {
+      "name": "M4A4 | Full Throttle",
+      "rarity": "Covert"
+    },
+    "215": {
+      "name": "M4A4 | X-Ray",
+      "rarity": "Covert"
+    },
+    "449": {
+      "name": "M4A4 | Poseidon",
+      "rarity": "Classified"
+    },
+    "167": {
+      "name": "M4A4 | Radiation Hazard",
+      "rarity": "Mil-Spec Grade"
+    },
+    "101": {
+      "name": "M4A4 | Tornado",
+      "rarity": "Industrial Grade"
+    },
+    "1041": {
+      "name": "M4A4 | In Living Color",
+      "rarity": "Covert"
+    },
+    "176": {
+      "name": "M4A4 | Faded Zebra",
+      "rarity": "Mil-Spec Grade"
+    },
+    "255": {
+      "name": "M4A4 | Asiimov",
+      "rarity": "Covert"
+    },
+    "471": {
+      "name": "M4A4 | Daybreak",
+      "rarity": "Restricted"
+    },
+    "17": {
+      "name": "M4A4 | Urban DDPAT",
+      "rarity": "Industrial Grade"
+    },
+    "1063": {
+      "name": "M4A4 | The Coalition",
+      "rarity": "Covert"
+    },
+    "533": {
+      "name": "M4A4 | The Battlestar",
+      "rarity": "Covert"
+    },
+    "1313": {
+      "name": "M4A4 | Steel Work",
+      "rarity": "Industrial Grade"
+    }
+  },
+  "AK-47": {
+    "422": {
+      "name": "AK-47 | Elite Build",
+      "rarity": "Mil-Spec Grade"
+    },
+    "1141": {
+      "name": "AK-47 | Nightwish",
+      "rarity": "Covert"
+    },
+    "1171": {
+      "name": "AK-47 | Inheritance",
+      "rarity": "Covert"
+    },
+    "1288": {
+      "name": "AK-47 | VariCamo Grey",
+      "rarity": "Industrial Grade"
+    },
+    "226": {
+      "name": "AK-47 | Blue Laminate",
+      "rarity": "Restricted"
+    },
+    "302": {
+      "name": "AK-47 | Vulcan",
+      "rarity": "Covert"
+    },
+    "1179": {
+      "name": "AK-47 | Olive Polycam",
+      "rarity": "Industrial Grade"
+    },
+    "1425": {
+      "name": "AK-47 | Crane Flight",
+      "rarity": "Classified"
+    },
+    "490": {
+      "name": "AK-47 | Frontside Misty",
+      "rarity": "Classified"
+    },
+    "1035": {
+      "name": "AK-47 | Slate",
+      "rarity": "Restricted"
+    },
+    "1207": {
+      "name": "AK-47 | Searing Rage",
+      "rarity": "Classified"
+    },
+    "941": {
+      "name": "AK-47 | Phantom Disruptor",
+      "rarity": "Classified"
+    },
+    "282": {
+      "name": "AK-47 | Redline",
+      "rarity": "Classified"
+    },
+    "1143": {
+      "name": "AK-47 | Ice Coaled",
+      "rarity": "Classified"
+    },
+    "1449": {
+      "name": "AK-47 | AUTOEXEC",
+      "rarity": "Covert"
+    },
+    "122": {
+      "name": "AK-47 | Jungle Spray",
+      "rarity": "Industrial Grade"
+    },
+    "656": {
+      "name": "AK-47 | Orbit Mk01",
+      "rarity": "Restricted"
+    },
+    "1283": {
+      "name": "AK-47 | Wintergreen",
+      "rarity": "Mil-Spec Grade"
+    },
+    "44": {
+      "name": "AK-47 | Case Hardened",
+      "rarity": "Classified"
+    },
+    "1004": {
+      "name": "AK-47 | X-Ray",
+      "rarity": "Covert"
+    },
+    "474": {
+      "name": "AK-47 | Aquamarine Revenge",
+      "rarity": "Covert"
+    },
+    "707": {
+      "name": "AK-47 | Neon Rider",
+      "rarity": "Covert"
+    },
+    "1309": {
+      "name": "AK-47 | Nouveau Rouge",
+      "rarity": "Classified"
+    },
+    "142": {
+      "name": "AK-47 | B the Monster",
+      "rarity": "Covert"
+    },
+    "1087": {
+      "name": "AK-47 | Leet Museo",
+      "rarity": "Covert"
+    },
+    "639": {
+      "name": "AK-47 | Bloodsport",
+      "rarity": "Covert"
+    },
+    "14": {
+      "name": "AK-47 | Red Laminate",
+      "rarity": "Classified"
+    },
+    "1466": {
+      "name": "AK-47 | Consequence of the Jinn",
+      "rarity": "Covert"
+    },
+    "180": {
+      "name": "AK-47 | Fire Serpent",
+      "rarity": "Covert"
+    },
+    "1397": {
+      "name": "AK-47 | Aphrodite",
+      "rarity": "Covert"
+    },
+    "524": {
+      "name": "AK-47 | Fuel Injector",
+      "rarity": "Covert"
+    },
+    "394": {
+      "name": "AK-47 | Cartel",
+      "rarity": "Classified"
+    },
+    "1218": {
+      "name": "AK-47 | Midnight Laminate",
+      "rarity": "Restricted"
+    },
+    "1221": {
+      "name": "AK-47 | Head Shot",
+      "rarity": "Covert"
+    },
+    "380": {
+      "name": "AK-47 | Wasteland Rebel",
+      "rarity": "Covert"
+    },
+    "72": {
+      "name": "AK-47 | Safari Mesh",
+      "rarity": "Industrial Grade"
+    },
+    "675": {
+      "name": "AK-47 | The Empress",
+      "rarity": "Covert"
+    },
+    "801": {
+      "name": "AK-47 | Asiimov",
+      "rarity": "Covert"
+    },
+    "912": {
+      "name": "AK-47 | Crossfade",
+      "rarity": "Mil-Spec Grade"
+    },
+    "745": {
+      "name": "AK-47 | Baroque Purple",
+      "rarity": "Industrial Grade"
+    },
+    "836": {
+      "name": "AK-47 | Uncharted",
+      "rarity": "Mil-Spec Grade"
+    },
+    "113": {
+      "name": "AK-47 | The Outsiders",
+      "rarity": "Classified"
+    },
+    "885": {
+      "name": "AK-47 | Rat Rod",
+      "rarity": "Restricted"
+    },
+    "600": {
+      "name": "AK-47 | Neon Revolution",
+      "rarity": "Covert"
+    },
+    "1238": {
+      "name": "AK-47 | Steel Delta",
+      "rarity": "Mil-Spec Grade"
+    },
+    "300": {
+      "name": "AK-47 | Emerald Pinstripe",
+      "rarity": "Restricted"
+    },
+    "1352": {
+      "name": "AK-47 | The Oligarch",
+      "rarity": "Covert"
+    }
+  }
+}

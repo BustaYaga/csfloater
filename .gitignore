@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Your real data: never commit it (the repo may be public)
+deals.db
+snapshots.db
+*.db-journal
+scan_position.json
+rate_state.json
+logs/
+dashboard_export.html
+
+# Bundled demo data lives in demo/ and is intentionally committed
+!demo/demo.db
+demo/.rate_state_unused.json
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+!demo/scan_position.json
