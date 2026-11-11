@@ -4431,3 +4431,13 @@ Resumes at index:   232
 Stopped early: rate limit threshold reached mid-run (9/200 left, resets in 21m 9s)
 Outcome: rate_limit - terminated early
 ====
+
+==== Session: 2026-11-11T02:27:51.957053+00:00 ====
+Strata processed:   190/273
+Skins indexed:      97
+Elapsed:            590s
+Rate limit left:    10/200
+Resumes at index:   149
+Stopped early: rate limit threshold reached mid-run (10/200 left, resets in 50m 12s)
+Outcome: rate_limit - terminated early
+====
