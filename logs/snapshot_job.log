@@ -4771,3 +4771,13 @@ Resumes at index:   77
 Result: time budget reached - will resume next run.
 Outcome: time_budget - paused, resumable
 ====
+
+==== Session: 2026-11-20T01:38:44.258130+00:00 ====
+Strata processed:   190/273
+Skins indexed:      107
+Elapsed:            596s
+Rate limit left:    10/200
+Resumes at index:   267
+Stopped early: rate limit threshold reached mid-run (10/200 left, resets in 50m 6s)
+Outcome: rate_limit - terminated early
+====
